@@ -150,7 +150,7 @@ export default function Users() {
       return;
     }
 
-    if (window.confirm(`Are you sure you want to delete the user account for ${userToDelete.name}?`)) {
+    if (await window.customConfirm(`Are you sure you want to delete the user account for ${userToDelete.name}?`)) {
       try {
         await deleteUser(userToDelete.id);
         loadUsers();
