@@ -74,7 +74,7 @@ export default function Dashboard() {
   }, []);
 
   const handleAdmissionAction = async (id: number, status: "Approved" | "Rejected") => {
-    if (window.confirm(`Are you sure you want to update this applicant status to ${status}?`)) {
+    if (await window.customConfirm(`Are you sure you want to update this applicant status to ${status}?`)) {
       setUpdatingId(id);
       try {
         await updateAdmissionStatus(id, status);

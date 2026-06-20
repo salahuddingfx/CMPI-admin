@@ -138,7 +138,7 @@ export default function Blogs() {
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm("Are you sure you want to delete this blog?")) {
+    if (await window.customConfirm("Are you sure you want to delete this blog?")) {
       try {
         await deleteBlog(id);
         loadBlogs();

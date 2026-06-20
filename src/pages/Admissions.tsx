@@ -43,7 +43,7 @@ export default function Admissions() {
   }, []);
 
   const handleStatusChange = async (id: number, status: "Approved" | "Rejected") => {
-    if (window.confirm(`Are you sure you want to change status to ${status}? Approving will auto-create a student user account.`)) {
+    if (await window.customConfirm(`Are you sure you want to change status to ${status}? Approving will auto-create a student user account.`)) {
       setUpdatingId(id);
       try {
         await updateAdmissionStatus(id, status);

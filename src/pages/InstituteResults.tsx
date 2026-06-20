@@ -176,7 +176,7 @@ export default function InstituteResults() {
   }
 
   async function handleDelete(id: number) {
-    if (!confirm("Delete this result?")) return;
+    if (!await window.customConfirm("Delete this result?")) return;
     try {
       await deleteInstituteResult(id);
       setSearchResults((prev) => prev.filter((r) => r.id !== id));

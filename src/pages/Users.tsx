@@ -17,6 +17,7 @@ interface User {
   address?: string;
   admission_date?: string;
   avatar?: string;
+  status?: string;
 }
 
 export default function Users() {
@@ -41,6 +42,7 @@ export default function Users() {
   const [guardian, setGuardian] = useState("");
   const [bloodGroup, setBloodGroup] = useState("");
   const [address, setAddress] = useState("");
+  const [status, setStatus] = useState("pending");
 
   const currentAdmin = (() => {
     try {
@@ -80,6 +82,7 @@ export default function Users() {
     setGuardian("");
     setBloodGroup("");
     setAddress("");
+    setStatus("pending");
     setEditUserObj(null);
     setShowForm(false);
   };
@@ -98,6 +101,7 @@ export default function Users() {
     setGuardian(u.guardian || "");
     setBloodGroup(u.blood_group || "");
     setAddress(u.address || "");
+    setStatus(u.status || "pending");
     setShowForm(true);
   };
 
@@ -117,6 +121,7 @@ export default function Users() {
       guardian: guardian || null,
       blood_group: bloodGroup || null,
       address: address || null,
+      status,
     };
 
     if (password) {
@@ -248,6 +253,17 @@ export default function Users() {
                         >
                           {u.role}
                         </span>
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase border ml-2 ${
+                            u.status === "active"
+                              ? "bg-green-500/10 text-green-600 border-green-500/20"
+                              : u.status === "suspended"
+                              ? "bg-red-500/10 text-red-600 border-red-500/20"
+                              : "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                          }`}
+                        >
+                          {u.status || "pending"}
+                        </span>
                         <h3 className="text-base font-black text-foreground mt-1.5">{u.name}</h3>
                         <p className="text-xs font-semibold text-muted-foreground -mt-0.5">{u.email}</p>
                       </div>
@@ -325,6 +341,21 @@ export default function Users() {
                   >
                     <option value="student">Student</option>
                     <option value="admin">Administrator</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5 col-span-2">
+                  <label className="text-xs font-black uppercase text-muted-foreground block">Account status</label>
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-semibold focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value="pending">Pending Approval</option>
+                    <option value="active">Active</option>
+                    <option value="suspended">Suspended</option>
                   </select>
                 </div>
               </div>

@@ -117,7 +117,7 @@ export default function Events() {
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm("Are you sure you want to delete this event? This action cannot be undone.")) {
+    if (await window.customConfirm("Are you sure you want to delete this event? This action cannot be undone.")) {
       try {
         await deleteEvent(id);
         loadEvents();

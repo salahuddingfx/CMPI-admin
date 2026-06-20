@@ -102,7 +102,7 @@ export default function Notices() {
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm("Are you sure you want to delete this notice? This action cannot be undone.")) {
+    if (await window.customConfirm("Are you sure you want to delete this notice? This action cannot be undone.")) {
       try {
         await deleteNotice(id);
         loadNotices();

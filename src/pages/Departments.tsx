@@ -133,7 +133,7 @@ export default function Departments() {
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm("Are you sure you want to delete this department? All associated listings may be affected.")) {
+    if (await window.customConfirm("Are you sure you want to delete this department? All associated listings may be affected.")) {
       try {
         await deleteDepartment(id);
         loadDepartments();
