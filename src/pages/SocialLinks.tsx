@@ -84,7 +84,7 @@ export default function SocialLinks() {
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm("Delete this social link?")) {
+    if (await window.customConfirm("Delete this social link?")) {
       try {
         await deleteSocialLink(id);
         loadLinks();

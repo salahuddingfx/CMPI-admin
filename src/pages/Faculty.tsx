@@ -105,7 +105,7 @@ export default function Faculty() {
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm("Are you sure you want to delete this faculty member from the directory?")) {
+    if (await window.customConfirm("Are you sure you want to delete this faculty member from the directory?")) {
       try {
         await deleteFaculty(id);
         loadFaculty();

@@ -60,7 +60,7 @@ export default function AdminLayout() {
   ];
 
   const handleLogout = async () => {
-    if (window.confirm("Are you sure you want to log out?")) {
+    if (await window.customConfirm("Are you sure you want to log out?")) {
       await logout();
       navigate("/login");
     }
