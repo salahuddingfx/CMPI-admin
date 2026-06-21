@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import type { ChangeEvent } from "react";
-import { Upload, Trash2, Download, Loader2, CheckCircle, AlertTriangle } from "lucide-react";
+import { Upload, Trash2, Download, Loader2, CheckCircle, AlertTriangle, Edit2, X, Save } from "lucide-react";
 import {
   getClassRoutines,
   uploadClassRoutine,
   deleteClassRoutine,
+  updateClassRoutine,
 } from "../services/api";
 
 const departments = [
@@ -41,6 +42,15 @@ export default function ClassRoutines() {
   const [academicYear, setAcademicYear] = useState(new Date().getFullYear().toString() + "-" + (new Date().getFullYear() + 1).toString().slice(-2));
   const [title, setTitle] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
+
+  // Edit state
+  const [editRoutine, setEditRoutine] = useState<Routine | null>(null);
+  const [editDept, setEditDept] = useState(departments[0]);
+  const [editSemester, setEditSemester] = useState("1st");
+  const [editAcademicYear, setEditAcademicYear] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+  const [editPdfFile, setEditPdfFile] = useState<File | null>(null);
+  const editFileRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     loadRoutines();
@@ -86,6 +96,43 @@ export default function ClassRoutines() {
       await deleteClassRoutine(id);
       setRoutines((prev) => prev.filter((r) => r.id !== id));
     } catch {}
+  }
+
+  function handleEditStart(routine: Routine) {
+    setEditRoutine(routine);
+    setEditDept(routine.department);
+    setEditSemester(routine.semester);
+    setEditAcademicYear(routine.academic_year);
+    setEditTitle(routine.title);
+    setEditPdfFile(null);
+  }
+
+  async function handleEditSave() {
+    if (!editRoutine || !editTitle) return;
+    setUploading(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const fd = new FormData();
+      fd.append("department", editDept);
+      fd.append("semester", editSemester);
+      fd.append("academic_year", editAcademicYear);
+      fd.append("title", editTitle);
+      if (editPdfFile) fd.append("pdf", editPdfFile);
+      await updateClassRoutine(editRoutine.id, fd);
+      setSuccess(`Routine updated: ${editTitle}`);
+      setEditRoutine(null);
+      loadRoutines();
+    } catch (e: any) {
+      setError(e.response?.data?.error || "Update failed");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function handleEditCancel() {
+    setEditRoutine(null);
+    setEditPdfFile(null);
   }
 
   function getDownloadUrl(routine: Routine) {
@@ -179,21 +226,50 @@ export default function ClassRoutines() {
                   </thead>
                   <tbody>
                     {items.map((r) => (
-                      <tr key={r.id} className="border-b border-border/50 hover:bg-muted/50">
-                        <td className="py-2 px-3 font-medium">{r.title}</td>
-                        <td className="py-2 px-3">{r.semester === "all" ? "All" : r.semester}</td>
-                        <td className="py-2 px-3">{r.academic_year}</td>
-                        <td className="py-2 px-3 text-xs text-muted-foreground font-mono">{r.original_name}</td>
-                        <td className="py-2 px-3 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</td>
-                        <td className="py-2 px-3 text-right space-x-2">
-                          <a href={getDownloadUrl(r)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline text-xs">
-                            <Download className="w-3 h-3" /> View
-                          </a>
-                          <button onClick={() => handleDelete(r.id)} className="text-destructive/70 hover:text-destructive">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
+                      editRoutine?.id === r.id ? (
+                        <tr key={r.id} className="border-b border-border/50 bg-muted/30">
+                          <td className="py-2 px-3">
+                            <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="bg-background border border-border rounded px-2 py-1 text-xs w-full" />
+                          </td>
+                          <td className="py-2 px-3">
+                            <select value={editSemester} onChange={(e) => setEditSemester(e.target.value)} className="bg-background border border-border rounded px-2 py-1 text-xs w-full">
+                              {allSemesters.map((s) => <option key={s} value={s}>{s === "all" ? "All Semesters" : s}</option>)}
+                            </select>
+                          </td>
+                          <td className="py-2 px-3">
+                            <input type="text" value={editAcademicYear} onChange={(e) => setEditAcademicYear(e.target.value)} className="bg-background border border-border rounded px-2 py-1 text-xs w-full" />
+                          </td>
+                          <td className="py-2 px-3">
+                            <input ref={editFileRef} type="file" accept=".pdf" onChange={(e: ChangeEvent<HTMLInputElement>) => setEditPdfFile(e.target.files?.[0] || null)} className="text-xs text-muted-foreground file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-bold file:bg-primary/10 file:text-primary" />
+                          </td>
+                          <td className="py-2 px-3 text-xs text-muted-foreground">{editPdfFile ? editPdfFile.name : "Keep current"}</td>
+                          <td className="py-2 px-3 text-right space-x-2">
+                            <button onClick={handleEditSave} disabled={uploading} className="inline-flex items-center gap-1 text-green-600 hover:text-green-700 text-xs font-medium">
+                              {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />} Save
+                            </button>
+                            <button onClick={handleEditCancel} className="text-xs text-muted-foreground hover:text-foreground">Cancel</button>
+                          </td>
+                        </tr>
+                      ) : (
+                        <tr key={r.id} className="border-b border-border/50 hover:bg-muted/50">
+                          <td className="py-2 px-3 font-medium">{r.title}</td>
+                          <td className="py-2 px-3">{r.semester === "all" ? "All" : r.semester}</td>
+                          <td className="py-2 px-3">{r.academic_year}</td>
+                          <td className="py-2 px-3 text-xs text-muted-foreground font-mono">{r.original_name}</td>
+                          <td className="py-2 px-3 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</td>
+                          <td className="py-2 px-3 text-right space-x-2">
+                            <a href={getDownloadUrl(r)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline text-xs">
+                              <Download className="w-3 h-3" /> View
+                            </a>
+                            <button onClick={() => handleEditStart(r)} className="text-muted-foreground hover:text-foreground" title="Edit">
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => handleDelete(r.id)} className="text-destructive/70 hover:text-destructive">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      )
                     ))}
                   </tbody>
                 </table>
