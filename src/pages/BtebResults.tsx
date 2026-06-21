@@ -43,6 +43,13 @@ const loadPdfJs = (): Promise<any> => {
   });
 };
 
+interface ParseProgress {
+  current: number;
+  total: number;
+  fileName: string;
+  phase: "parsing" | "syncing";
+}
+
 export default function BtebResults() {
   const [semester, setSemester] = useState("auto");
   const [regulation, setRegulation] = useState("auto");
@@ -55,6 +62,7 @@ export default function BtebResults() {
   const [parsedData, setParsedData] = useState<ParsedResult[]>([]);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [driveUrl, setDriveUrl] = useState("");
+  const [parseProgress, setParseProgress] = useState<ParseProgress | null>(null);
 
   // Drive import progress state
   const [driveJob, setDriveJob] = useState<ImportJobStatus | null>(null);
@@ -153,12 +161,16 @@ export default function BtebResults() {
     setSuccess(null);
     setParsedCount(0);
     setParsedData([]);
+    setParseProgress(null);
 
     try {
       const pdfjsLib = await loadPdfJs();
       const allResults: ParsedResult[] = [];
 
-      for (const file of pdfFiles) {
+      for (let fi = 0; fi < pdfFiles.length; fi++) {
+        const file = pdfFiles[fi]!;
+        setParseProgress({ current: fi + 1, total: pdfFiles.length, fileName: file.name, phase: "parsing" });
+
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         let lastDetectedDept = "Computer Science & Technology";
@@ -183,12 +195,14 @@ export default function BtebResults() {
 
       if (allResults.length === 0) {
         setError("No BTEB results found for CMPI (Institute Code 74026 or 16058) in the selected PDF files.");
+        setParseProgress(null);
       } else {
         setParsedCount(allResults.length);
         setParsedData(allResults);
         setSuccess(`Successfully parsed ${allResults.length} student results from ${pdfFiles.length} files. Syncing to database...`);
 
         setImporting(true);
+        setParseProgress({ current: pdfFiles.length, total: pdfFiles.length, fileName: "Uploading to database...", phase: "syncing" });
         try {
           const response = await importBtebResults({ results: allResults });
           setSuccess(`Import success! Successfully uploaded ${response.count} result records from ${pdfFiles.length} PDF files.`);
@@ -199,11 +213,13 @@ export default function BtebResults() {
           setError(importErr.response?.data?.message || "Failed to auto-sync parsed records to the backend database.");
         } finally {
           setImporting(false);
+          setParseProgress(null);
         }
       }
     } catch (err) {
       setError("Failed to parse PDF files. Check if files are password-protected or corrupt.");
       console.error(err);
+      setParseProgress(null);
     } finally {
       setLoading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -452,19 +468,19 @@ export default function BtebResults() {
                 <label className="text-xs font-black uppercase text-muted-foreground block">
                   Sync from Google Drive Link
                 </label>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="url"
                     placeholder="https://drive.google.com/drive/folders/... or https://drive.google.com/file/d/..."
                     value={driveUrl}
                     onChange={(e) => setDriveUrl(e.target.value)}
                     disabled={driveSyncing}
-                    className="flex-1 rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-semibold focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+                    className="flex-1 min-w-0 rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-semibold focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
                   />
                   <button
                     onClick={handleDriveImport}
                     disabled={driveSyncing || !driveUrl}
-                    className="flex items-center gap-2 rounded-xl bg-primary text-primary-foreground hover:bg-primary-dark font-black shadow-lg shadow-primary/20 px-5 py-2.5 text-sm transition-all disabled:opacity-50"
+                    className="shrink-0 flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground hover:bg-primary-dark font-black shadow-lg shadow-primary/20 px-5 py-2.5 text-sm transition-all disabled:opacity-50 whitespace-nowrap"
                   >
                     {driveSyncing ? (
                       <RefreshCw className="h-4 w-4 animate-spin" />
@@ -541,6 +557,36 @@ export default function BtebResults() {
                 </div>
               )}
             </div>
+
+            {/* Per-file parse progress */}
+            {parseProgress && (
+              <div className="space-y-2.5 p-4 rounded-xl border border-primary/20 bg-primary/5">
+                <div className="flex items-center justify-between text-xs font-bold">
+                  <div className="flex items-center gap-2 text-primary">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="truncate max-w-[260px]">
+                      {parseProgress.phase === "syncing"
+                        ? "Uploading to database..."
+                        : `Parsing file ${parseProgress.current} of ${parseProgress.total}`}
+                    </span>
+                  </div>
+                  <span className="text-muted-foreground shrink-0 ml-2">
+                    {Math.round((parseProgress.current / parseProgress.total) * 100)}%
+                  </span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${Math.round((parseProgress.current / parseProgress.total) * 100)}%` }}
+                  />
+                </div>
+                {parseProgress.phase === "parsing" && (
+                  <p className="text-[11px] text-muted-foreground font-semibold truncate">
+                    📄 {parseProgress.fileName}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Parsing action area */}
             <div className="flex flex-wrap gap-3 items-center border-t border-border pt-6">
