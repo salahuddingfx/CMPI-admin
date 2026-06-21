@@ -292,3 +292,51 @@ export async function getDashboardStats() {
     recentNotices: notices.slice(0, 5),
   };
 }
+
+// Class routines
+export async function getClassRoutines(params?: { department?: string; semester?: string }) {
+  const response = await api.get("/class-routines", { params });
+  return response.data;
+}
+export async function uploadClassRoutine(formData: FormData) {
+  const response = await api.post("/class-routines/upload", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data;
+}
+export async function deleteClassRoutine(id: number) {
+  const response = await api.delete(`/class-routines/${id}`);
+  return response.data;
+}
+
+// Bills
+export async function getBills(params?: Record<string, string>) {
+  const response = await api.get("/bills", { params });
+  return response.data;
+}
+export async function createBill(data: Record<string, any>) {
+  const response = await api.post("/bills", data);
+  return response.data;
+}
+export async function deleteBill(id: number) {
+  const response = await api.delete(`/bills/${id}`);
+  return response.data;
+}
+export async function markBillPaid(id: number, data?: Record<string, string>) {
+  const response = await api.post(`/bills/${id}/mark-paid`, data);
+  return response.data;
+}
+export async function getBillStats() {
+  const response = await api.get("/bills/stats");
+  return response.data;
+}
+export async function bulkCreateBills(data: Record<string, any>) {
+  const response = await api.post("/bills/bulk", data);
+  return response.data;
+}
+export async function bulkImportStudents(formData: FormData) {
+  const response = await api.post("/users/bulk-import", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data;
+}
