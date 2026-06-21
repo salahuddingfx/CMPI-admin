@@ -9,6 +9,7 @@ interface HeroSlide {
   title: string;
   description: string;
   image: string | null;
+  video_url: string | null;
   cta_label: string | null;
   cta_href: string | null;
   secondary_label: string | null;
@@ -31,6 +32,7 @@ export default function HeroSlides() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [image, setImage] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
   const [ctaLabel, setCtaLabel] = useState("");
   const [ctaHref, setCtaHref] = useState("");
   const [secondaryLabel, setSecondaryLabel] = useState("");
@@ -60,7 +62,7 @@ export default function HeroSlides() {
   useEffect(() => { fetchSlides(); }, []);
 
   const resetForm = () => {
-    setEyebrow(""); setTitle(""); setDescription(""); setImage("");
+    setEyebrow(""); setTitle(""); setDescription(""); setImage(""); setVideoUrl("");
     setCtaLabel(""); setCtaHref(""); setSecondaryLabel(""); setSecondaryHref("");
     setPanelTitle(""); setPanelDescription("");
     setStats([{ value: "", label: "" }, { value: "", label: "" }, { value: "", label: "" }]);
@@ -74,6 +76,7 @@ export default function HeroSlides() {
     setTitle(slide.title);
     setDescription(slide.description);
     setImage(slide.image || "");
+    setVideoUrl(slide.video_url || "");
     setCtaLabel(slide.cta_label || "");
     setCtaHref(slide.cta_href || "");
     setSecondaryLabel(slide.secondary_label || "");
@@ -91,6 +94,7 @@ export default function HeroSlides() {
     setSaving(true);
     const payload = {
       eyebrow, title, description, image: image || null,
+      video_url: videoUrl || null,
       cta_label: ctaLabel || null, cta_href: ctaHref || null,
       secondary_label: secondaryLabel || null, secondary_href: secondaryHref || null,
       panel_title: panelTitle || null, panel_description: panelDescription || null,
@@ -184,6 +188,13 @@ export default function HeroSlides() {
             label="Background Image"
             placeholder="Background image for the slide (optional)"
           />
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-black uppercase text-muted-foreground block">Video URL (Optional)</label>
+            <input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)}
+              placeholder="e.g. https://www.youtube.com/embed/dQw4w9WgXcQ (Setting this makes this slide show in the Home Page Introduction Video Section)"
+              className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-semibold focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+          </div>
 
           <div className="grid gap-5 sm:grid-cols-2">
             <div className="space-y-1.5">
