@@ -22,7 +22,8 @@ import {
   User as UserIcon,
   ChevronRight,
   DollarSign,
-  Check
+  Check,
+  Sliders
 } from "lucide-react";
 import { logout } from "../../services/api";
 
@@ -99,6 +100,7 @@ export default function AdminLayout() {
     { name: "Bills & Payments", path: "/bills", icon: DollarSign },
     { name: "Reports", path: "/reports", icon: FileText },
     { name: "Social Links", path: "/social-links", icon: Share2 },
+    { name: "Hero Slides", path: "/hero-slides", icon: Sliders },
     { name: "Site Settings", path: "/site-settings", icon: Settings },
   ];
 
