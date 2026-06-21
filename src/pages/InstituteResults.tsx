@@ -10,6 +10,9 @@ import {
   Trash2,
   Loader2,
   Info,
+  Edit2,
+  Save,
+  X,
 } from "lucide-react";
 import {
   uploadInstituteCsv,
@@ -18,6 +21,7 @@ import {
   deleteInstituteResult,
   searchInstituteResults,
   getInstituteResultsStats,
+  updateInstituteResult,
 } from "../services/api";
 import { getSubjectsForSemester, allSemesters } from "../utils/instituteSubjects";
 
@@ -182,6 +186,50 @@ export default function InstituteResults() {
       setSearchResults((prev) => prev.filter((r) => r.id !== id));
       loadStats();
     } catch {}
+  }
+
+  // Edit state
+  const [editResult, setEditResult] = useState<InstituteResult | null>(null);
+  const [editStatus, setEditStatus] = useState("Passed");
+  const [editReferredSubjects, setEditReferredSubjects] = useState<string[]>([]);
+  const [editSaving, setEditSaving] = useState(false);
+
+  function handleEditStart(r: InstituteResult) {
+    setEditResult(r);
+    setEditStatus(r.status);
+    setEditReferredSubjects(r.referred_subjects || []);
+  }
+
+  async function handleEditSave() {
+    if (!editResult) return;
+    setEditSaving(true);
+    try {
+      await updateInstituteResult(editResult.id, {
+        status: editStatus,
+        referred_subjects: editStatus === "Referred" ? editReferredSubjects : null,
+      });
+      setSearchResults((prev) =>
+        prev.map((r) =>
+          r.id === editResult.id
+            ? { ...r, status: editStatus, referred_subjects: editStatus === "Referred" ? editReferredSubjects : null }
+            : r
+        )
+      );
+      setEditResult(null);
+    } catch (e: any) {
+      alert(e.response?.data?.error || "Update failed");
+    }
+    setEditSaving(false);
+  }
+
+  function handleEditCancel() {
+    setEditResult(null);
+  }
+
+  function toggleEditReferred(code: string) {
+    setEditReferredSubjects((prev) =>
+      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
+    );
   }
 
   const subjects = getSubjectsForSemester(semester);
@@ -455,31 +503,85 @@ export default function InstituteResults() {
               <tbody>
                 {searchResults.map((r) => (
                   <tr key={r.id} className="border-b border-border/50 hover:bg-muted/50">
-                    <td className="py-2 px-3 font-mono">{r.roll}</td>
-                    <td className="py-2 px-3">{r.semester}</td>
-                    <td className="py-2 px-3">{r.academic_year}</td>
-                    <td className="py-2 px-3">
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                          r.status === "Passed"
-                            ? "bg-green-500/10 text-green-600 dark:text-green-400"
-                            : "bg-destructive/10 text-destructive"
-                        }`}
-                      >
-                        {r.status}
-                      </span>
-                    </td>
-                    <td className="py-2 px-3 text-xs font-mono">
-                      {r.referred_subjects?.join(", ") || "—"}
-                    </td>
-                    <td className="py-2 px-3 text-right">
-                      <button
-                        onClick={() => handleDelete(r.id)}
-                        className="text-destructive/70 hover:text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
+                    {editResult?.id === r.id ? (
+                      <>
+                        <td className="py-2 px-3 font-mono">{r.roll}</td>
+                        <td className="py-2 px-3">{r.semester}</td>
+                        <td className="py-2 px-3">{r.academic_year}</td>
+                        <td className="py-2 px-3">
+                          <select
+                            value={editStatus}
+                            onChange={(e) => setEditStatus(e.target.value)}
+                            className="bg-background border border-border rounded px-2 py-1 text-xs w-full"
+                          >
+                            <option value="Passed">Passed</option>
+                            <option value="Referred">Referred</option>
+                          </select>
+                        </td>
+                        <td className="py-2 px-3 text-xs font-mono" colSpan={2}>
+                          {editStatus === "Referred" && (
+                            <div className="flex flex-wrap gap-1">
+                              {getSubjectsForSemester(r.semester).map((subj) => (
+                                <button
+                                  key={subj.code}
+                                  onClick={() => toggleEditReferred(subj.code)}
+                                  className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
+                                    editReferredSubjects.includes(subj.code)
+                                      ? "bg-destructive/20 text-destructive"
+                                      : "bg-green-500/10 text-green-600"
+                                  }`}
+                                >
+                                  {subj.code}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          <div className="flex gap-2 mt-2">
+                            <button onClick={handleEditSave} disabled={editSaving} className="inline-flex items-center gap-1 text-green-600 hover:text-green-700 text-xs font-medium">
+                              {editSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />} Save
+                            </button>
+                            <button onClick={handleEditCancel} className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+                              <X className="w-3 h-3" /> Cancel
+                            </button>
+                          </div>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="py-2 px-3 font-mono">{r.roll}</td>
+                        <td className="py-2 px-3">{r.semester}</td>
+                        <td className="py-2 px-3">{r.academic_year}</td>
+                        <td className="py-2 px-3">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                              r.status === "Passed"
+                                ? "bg-green-500/10 text-green-600 dark:text-green-400"
+                                : "bg-destructive/10 text-destructive"
+                            }`}
+                          >
+                            {r.status}
+                          </span>
+                        </td>
+                        <td className="py-2 px-3 text-xs font-mono">
+                          {r.referred_subjects?.join(", ") || "—"}
+                        </td>
+                        <td className="py-2 px-3 text-right space-x-1">
+                          <button
+                            onClick={() => handleEditStart(r)}
+                            className="text-muted-foreground hover:text-foreground"
+                            title="Edit"
+                          >
+                            <Edit2 className="w-3.5 h-3.5 inline" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(r.id)}
+                            className="text-destructive/70 hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </>
+                    )}
                   </tr>
                 ))}
               </tbody>
