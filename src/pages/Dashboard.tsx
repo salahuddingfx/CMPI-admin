@@ -11,7 +11,8 @@ import {
   CheckCircle,
   XCircle,
   RefreshCw,
-  BarChart3
+  BarChart3,
+  DollarSign
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { getDashboardStats, updateAdmissionStatus, getChartData } from "../services/api";
@@ -35,6 +36,10 @@ interface ChartData {
   admissions: { month: string; count: number }[];
   notices: { month: string; count: number }[];
   blogs: { month: string; count: number }[];
+  studentsByDept: { department: string; count: number }[];
+  btebByDept: { department: string; count: number }[];
+  btebBySemester: { semester: string; count: number }[];
+  billsByStatus: { status: string; count: number; total: number }[];
 }
 
 function ChartTooltip({ active, payload, label }: any) {
@@ -237,6 +242,95 @@ export default function Dashboard() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Additional Analytics Charts */}
+      {chartData && chartData.studentsByDept && chartData.studentsByDept.length > 0 && (
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+          {/* Students by Department */}
+          <div className="glass-card p-5 border">
+            <div className="flex items-center gap-2 mb-4">
+              <Users className="h-4 w-4 text-primary" />
+              <h3 className="text-xs font-black text-foreground uppercase tracking-wider">Students by Department</h3>
+            </div>
+            <div className="h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData.studentsByDept} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <XAxis dataKey="department" tick={{ fontSize: 8, fill: "hsl(var(--muted-foreground))" }} />
+                  <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Bar dataKey="count" fill="hsl(164, 100%, 21%)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* BTEB Results by Department */}
+          <div className="glass-card p-5 border">
+            <div className="flex items-center gap-2 mb-4">
+              <Award className="h-4 w-4 text-emerald-600" />
+              <h3 className="text-xs font-black text-foreground uppercase tracking-wider">BTEB Results by Dept</h3>
+            </div>
+            <div className="h-48">
+              {chartData.btebByDept.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData.btebByDept} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                    <XAxis dataKey="department" tick={{ fontSize: 8, fill: "hsl(var(--muted-foreground))" }} />
+                    <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                    <Tooltip content={<ChartTooltip />} />
+                    <Bar dataKey="count" fill="#10b981" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full items-center justify-center text-xs text-muted-foreground">No BTEB data</div>
+              )}
+            </div>
+          </div>
+
+          {/* BTEB Results by Semester */}
+          <div className="glass-card p-5 border">
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart3 className="h-4 w-4 text-orange-500" />
+              <h3 className="text-xs font-black text-foreground uppercase tracking-wider">BTEB by Semester</h3>
+            </div>
+            <div className="h-48">
+              {chartData.btebBySemester.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData.btebBySemester} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                    <XAxis dataKey="semester" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                    <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                    <Tooltip content={<ChartTooltip />} />
+                    <Bar dataKey="count" fill="#f97316" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full items-center justify-center text-xs text-muted-foreground">No BTEB data</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bill Collection Summary */}
+      {chartData && chartData.billsByStatus && chartData.billsByStatus.length > 0 && (
+        <div className="glass-card p-5 border">
+          <div className="flex items-center gap-2 mb-4">
+            <DollarSign className="h-4 w-4 text-primary" />
+            <h3 className="text-xs font-black text-foreground uppercase tracking-wider">Bill Collection Summary</h3>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {chartData.billsByStatus.map((bill) => (
+              <div key={bill.status} className="rounded-lg border bg-muted/30 p-4 text-center">
+                <span className={`text-xs font-bold uppercase ${bill.status === 'paid' ? 'text-green-600' : bill.status === 'overdue' ? 'text-red-600' : 'text-yellow-600'}`}>{bill.status}</span>
+                <div className="mt-2 text-xl font-black">{bill.count}</div>
+                <div className="text-xs text-muted-foreground">৳{(bill.total || 0).toLocaleString()}</div>
+              </div>
+            ))}
           </div>
         </div>
       )}
