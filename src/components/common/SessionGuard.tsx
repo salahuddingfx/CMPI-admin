@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAutoLogout } from "../hooks/useAutoLogout";
+import { useAutoLogout } from "../../hooks/useAutoLogout";
 import { AlertTriangle, LogOut } from "lucide-react";
 
 const SESSION_MINUTES = 30;
