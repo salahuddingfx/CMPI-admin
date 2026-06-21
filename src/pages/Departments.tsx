@@ -13,6 +13,7 @@ interface Department {
   labs?: string[];
   achievements?: string[];
   career_opportunities?: string[];
+  image?: string;
 }
 
 export default function Departments() {
@@ -33,6 +34,7 @@ export default function Departments() {
   const [labs, setLabs] = useState(""); // newline separated
   const [achievements, setAchievements] = useState(""); // newline separated
   const [careerOpportunities, setCareerOpportunities] = useState(""); // newline separated
+  const [image, setImage] = useState("");
 
   const loadDepartments = async () => {
     setLoading(true);
@@ -76,6 +78,7 @@ export default function Departments() {
     setLabs("");
     setAchievements("");
     setCareerOpportunities("");
+    setImage("");
     setEditDept(null);
     setShowForm(false);
   };
@@ -91,6 +94,7 @@ export default function Departments() {
     setLabs(dept.labs ? dept.labs.join("\n") : "");
     setAchievements(dept.achievements ? dept.achievements.join("\n") : "");
     setCareerOpportunities(dept.career_opportunities ? dept.career_opportunities.join("\n") : "");
+    setImage(dept.image || "");
     setShowForm(true);
   };
 
@@ -114,6 +118,7 @@ export default function Departments() {
       labs: parseLines(labs),
       achievements: parseLines(achievements),
       career_opportunities: parseLines(careerOpportunities),
+      image: image || null,
     };
 
     try {
@@ -206,12 +211,17 @@ export default function Departments() {
                 <div key={d.id} className="glass-card p-6 border flex flex-col justify-between gap-4 transition hover:shadow-md">
                   <div className="space-y-3">
                     <div className="flex justify-between items-start gap-4">
-                      <div>
-                        <span className="inline-flex rounded-full bg-secondary/15 px-2.5 py-0.5 text-[10px] font-black uppercase text-secondary-dark border border-secondary/20">
-                          {d.short_title}
-                        </span>
-                        <h3 className="text-base font-black text-foreground mt-1">{d.title}</h3>
-                        <p className="text-xs text-muted-foreground font-mono">Slug: {d.slug}</p>
+                      <div className="flex items-start gap-3 min-w-0">
+                        {d.image && (
+                          <img src={d.image} alt={d.title} className="h-14 w-14 rounded-xl object-cover border border-border shrink-0" />
+                        )}
+                        <div>
+                          <span className="inline-flex rounded-full bg-secondary/15 px-2.5 py-0.5 text-[10px] font-black uppercase text-secondary-dark border border-secondary/20">
+                            {d.short_title}
+                          </span>
+                          <h3 className="text-base font-black text-foreground mt-1">{d.title}</h3>
+                          <p className="text-xs text-muted-foreground font-mono">Slug: {d.slug}</p>
+                        </div>
                       </div>
                       <Layers className="h-6 w-6 text-primary shrink-0 opacity-80" />
                     </div>
@@ -371,6 +381,17 @@ export default function Departments() {
                   value={careerOpportunities}
                   onChange={(e) => setCareerOpportunities(e.target.value)}
                   className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-semibold focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 font-sans"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-black uppercase text-muted-foreground block">Department Image URL</label>
+                <input
+                  type="text"
+                  placeholder="https://example.com/department-image.jpg"
+                  value={image}
+                  onChange={(e) => setImage(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-semibold focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>
 
