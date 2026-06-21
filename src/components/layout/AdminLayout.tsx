@@ -135,6 +135,26 @@ export default function AdminLayout() {
     { name: "System Status", path: "/system-status", icon: Activity },
   ];
 
+  const hasMenuPermission = (itemName: string): boolean => {
+    const subRole = adminUser.sub_role;
+    if (!subRole || subRole === "super_admin") {
+      return true;
+    }
+
+    switch (subRole) {
+      case "academic_editor":
+        return ["Dashboard", "Subjects", "Class Routines", "Institute Results", "BTEB Results Board", "Departments"].includes(itemName);
+      case "content_manager":
+        return ["Dashboard", "Notices", "Events Calendar", "Blogs & News", "Hero Slides", "Social Links"].includes(itemName);
+      case "admission_officer":
+        return ["Dashboard", "Admissions Applications", "Faculty Directory"].includes(itemName);
+      case "accountant":
+        return ["Dashboard", "Bills & Payments", "Reports"].includes(itemName);
+      default:
+        return ["Dashboard"].includes(itemName);
+    }
+  };
+
   const handleLogout = async () => {
     if (await window.customConfirm("Are you sure you want to log out?")) {
       await logout();
@@ -184,7 +204,7 @@ export default function AdminLayout() {
 
         {/* Sidebar Menu Items */}
         <nav className="flex-1 space-y-1.5 overflow-y-auto px-4 py-6">
-          {menuItems.map((item) => {
+          {menuItems.filter((item) => hasMenuPermission(item.name)).map((item) => {
             const active = isActive(item.path);
             const Icon = item.icon;
             return (
