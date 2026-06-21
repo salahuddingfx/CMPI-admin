@@ -11,6 +11,7 @@ interface Faculty {
   email: string;
   phone: string;
   specialization?: string[];
+  photo?: string;
 }
 
 export default function Faculty() {
@@ -29,6 +30,7 @@ export default function Faculty() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [specialization, setSpecialization] = useState("");
+  const [photo, setPhoto] = useState("");
 
   const loadFaculty = async () => {
     setLoading(true);
@@ -54,6 +56,7 @@ export default function Faculty() {
     setEmail("");
     setPhone("");
     setSpecialization("");
+    setPhoto("");
     setEditFaculty(null);
     setShowForm(false);
   };
@@ -67,6 +70,7 @@ export default function Faculty() {
     setEmail(fac.email);
     setPhone(fac.phone);
     setSpecialization(fac.specialization ? fac.specialization.join(", ") : "");
+    setPhoto(fac.photo || "");
     setShowForm(true);
   };
 
@@ -86,6 +90,7 @@ export default function Faculty() {
       email,
       phone,
       specialization: specArray,
+      photo: photo || null,
     };
 
     try {
@@ -178,10 +183,15 @@ export default function Faculty() {
               {filteredFaculty.map((f) => (
                 <div key={f.id} className="glass-card p-5 border flex flex-col justify-between gap-4 transition hover:-translate-y-0.5 hover:shadow-md">
                   <div className="space-y-2">
-                    <div>
-                      <p className="text-xs font-black text-primary uppercase tracking-wider">{f.designation}</p>
-                      <h3 className="text-base font-black text-foreground">{f.name}</h3>
-                      <p className="text-xs font-semibold text-muted-foreground -mt-0.5 capitalize">Dept: {f.department.replace(/-/g, " ")}</p>
+                    <div className="flex items-start gap-3">
+                      {f.photo && (
+                        <img src={f.photo} alt={f.name} className="h-12 w-12 rounded-full object-cover border border-border shrink-0" />
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-xs font-black text-primary uppercase tracking-wider">{f.designation}</p>
+                        <h3 className="text-base font-black text-foreground">{f.name}</h3>
+                        <p className="text-xs font-semibold text-muted-foreground -mt-0.5 capitalize">Dept: {f.department.replace(/-/g, " ")}</p>
+                      </div>
                     </div>
 
                     <div className="text-xs font-semibold space-y-1 bg-muted/30 p-2.5 rounded-xl border border-border/50">
@@ -328,6 +338,17 @@ export default function Faculty() {
                   placeholder="e.g. Database, Surveying, CAD Drawing"
                   value={specialization}
                   onChange={(e) => setSpecialization(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-semibold focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-black uppercase text-muted-foreground block">Photo URL</label>
+                <input
+                  type="text"
+                  placeholder="https://example.com/photo.jpg"
+                  value={photo}
+                  onChange={(e) => setPhoto(e.target.value)}
                   className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-semibold focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>
