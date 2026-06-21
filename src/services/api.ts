@@ -340,3 +340,21 @@ export async function bulkImportStudents(formData: FormData) {
   });
   return response.data;
 }
+
+// Hero slides
+export async function getHeroSlides() {
+  const response = await api.get("/hero-slides/all");
+  return response.data;
+}
+export async function createHeroSlide(data: Record<string, any>) {
+  const response = await api.post("/hero-slides", data);
+  return response.data;
+}
+export async function updateHeroSlide(id: number, data: Record<string, any>) {
+  const response = await api.put(`/hero-slides/${id}`, data);
+  return response.data;
+}
+export async function deleteHeroSlide(id: number) {
+  const response = await api.delete(`/hero-slides/${id}`);
+  return response.data;
+}
