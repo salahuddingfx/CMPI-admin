@@ -310,7 +310,7 @@ export default function InstituteResults() {
               type="file"
               accept=".csv,.txt,.xlsx,.xls"
               onChange={(e: ChangeEvent<HTMLInputElement>) => setCsvFile(e.target.files?.[0] || null)}
-              className="text-sm"
+              className="text-xs text-muted-foreground font-semibold file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-extrabold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 file:cursor-pointer transition-all duration-150"
             />
             <button
               onClick={handleCsvUpload}
@@ -337,7 +337,7 @@ export default function InstituteResults() {
               type="file"
               accept=".pdf"
               onChange={(e: ChangeEvent<HTMLInputElement>) => setPdfFile(e.target.files?.[0] || null)}
-              className="text-sm"
+              className="text-xs text-muted-foreground font-semibold file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-extrabold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 file:cursor-pointer transition-all duration-150"
             />
             <button
               onClick={handlePdfUpload}
