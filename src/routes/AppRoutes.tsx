@@ -50,6 +50,48 @@ const RequireAuth = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// Require Module-level Permission Guard
+const RequirePermission = ({ children, module }: { children: React.ReactNode; module: string }) => {
+  const userStr = localStorage.getItem("cmpi-admin-user");
+  if (!userStr) {
+    return <Navigate to="/login" replace />;
+  }
+
+  try {
+    const user = JSON.parse(userStr);
+    const subRole = user.sub_role;
+    // Super admins (empty sub_role or 'super_admin') have access to everything
+    if (!subRole || subRole === "super_admin") {
+      return <>{children}</>;
+    }
+
+    let isAllowed = false;
+    switch (subRole) {
+      case "academic_editor":
+        isAllowed = ["subjects", "routines", "results", "departments"].includes(module);
+        break;
+      case "content_manager":
+        isAllowed = ["notices", "events", "blogs", "hero_slides", "social_links"].includes(module);
+        break;
+      case "admission_officer":
+        isAllowed = ["admissions", "faculty"].includes(module);
+        break;
+      case "accountant":
+        isAllowed = ["bills", "reports"].includes(module);
+        break;
+    }
+
+    if (!isAllowed) {
+      // Redirect to Dashboard if they try to access restricted route directly
+      return <Navigate to="/" replace />;
+    }
+  } catch (e) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+};
+
 // Loading fallback component
 const PageLoader = () => (
   <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -78,23 +120,23 @@ export default function AppRoutes() {
           }
         >
           <Route index element={<Dashboard />} />
-          <Route path="notices" element={<Notices />} />
-          <Route path="events" element={<Events />} />
-          <Route path="blogs" element={<Blogs />} />
-          <Route path="faculty" element={<Faculty />} />
-          <Route path="departments" element={<Departments />} />
-          <Route path="admissions" element={<Admissions />} />
-          <Route path="users" element={<Users />} />
-          <Route path="results" element={<BtebResults />} />
-          <Route path="institute-results" element={<InstituteResults />} />
-          <Route path="class-routines" element={<ClassRoutines />} />
-          <Route path="bills" element={<Bills />} />
-          <Route path="subjects" element={<Subjects />} />
-          <Route path="reports" element={<Reports />} />
-          <Route path="social-links" element={<SocialLinks />} />
-          <Route path="hero-slides" element={<HeroSlides />} />
-          <Route path="site-settings" element={<SiteSettings />} />
-          <Route path="system-status" element={<SystemStatus />} />
+          <Route path="notices" element={<RequirePermission module="notices"><Notices /></RequirePermission>} />
+          <Route path="events" element={<RequirePermission module="events"><Events /></RequirePermission>} />
+          <Route path="blogs" element={<RequirePermission module="blogs"><Blogs /></RequirePermission>} />
+          <Route path="faculty" element={<RequirePermission module="faculty"><Faculty /></RequirePermission>} />
+          <Route path="departments" element={<RequirePermission module="departments"><Departments /></RequirePermission>} />
+          <Route path="admissions" element={<RequirePermission module="admissions"><Admissions /></RequirePermission>} />
+          <Route path="users" element={<RequirePermission module="users"><Users /></RequirePermission>} />
+          <Route path="results" element={<RequirePermission module="results"><BtebResults /></RequirePermission>} />
+          <Route path="institute-results" element={<RequirePermission module="results"><InstituteResults /></RequirePermission>} />
+          <Route path="class-routines" element={<RequirePermission module="routines"><ClassRoutines /></RequirePermission>} />
+          <Route path="bills" element={<RequirePermission module="bills"><Bills /></RequirePermission>} />
+          <Route path="subjects" element={<RequirePermission module="subjects"><Subjects /></RequirePermission>} />
+          <Route path="reports" element={<RequirePermission module="reports"><Reports /></RequirePermission>} />
+          <Route path="social-links" element={<RequirePermission module="social_links"><SocialLinks /></RequirePermission>} />
+          <Route path="hero-slides" element={<RequirePermission module="hero_slides"><HeroSlides /></RequirePermission>} />
+          <Route path="site-settings" element={<RequirePermission module="site_settings"><SiteSettings /></RequirePermission>} />
+          <Route path="system-status" element={<RequirePermission module="system_status"><SystemStatus /></RequirePermission>} />
         </Route>
 
         {/* Fallback route */}
