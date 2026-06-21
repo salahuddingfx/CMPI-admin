@@ -19,6 +19,7 @@ const Bills = lazy(() => import("../pages/Bills"));
 const Reports = lazy(() => import("../pages/Reports"));
 const SocialLinks = lazy(() => import("../pages/SocialLinks"));
 const SiteSettings = lazy(() => import("../pages/SiteSettings"));
+const HeroSlides = lazy(() => import("../pages/HeroSlides"));
 
 // Auth Guard Component
 const RequireAuth = ({ children }: { children: React.ReactNode }) => {
@@ -85,6 +86,7 @@ export default function AppRoutes() {
           <Route path="bills" element={<Bills />} />
           <Route path="reports" element={<Reports />} />
           <Route path="social-links" element={<SocialLinks />} />
+          <Route path="hero-slides" element={<HeroSlides />} />
           <Route path="site-settings" element={<SiteSettings />} />
         </Route>
 
