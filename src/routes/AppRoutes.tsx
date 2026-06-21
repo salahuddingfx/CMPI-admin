@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import AdminLayout from "../components/layout/AdminLayout";
+import { SessionGuard } from "../components/common/SessionGuard";
 
 // Lazy loading pages
 const Login = lazy(() => import("../pages/Login"));
@@ -68,7 +69,9 @@ export default function AppRoutes() {
           path="/"
           element={
             <RequireAuth>
-              <AdminLayout />
+              <SessionGuard>
+                <AdminLayout />
+              </SessionGuard>
             </RequireAuth>
           }
         >
