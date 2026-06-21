@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Loader2, Plus, Trash2, CheckCircle, DollarSign, AlertTriangle, Clock } from "lucide-react";
-import { getBills, createBill, deleteBill, markBillPaid, getBillStats } from "../services/api";
+import { Loader2, Plus, Trash2, CheckCircle, DollarSign, AlertTriangle, Clock, Edit2, X, Save } from "lucide-react";
+import { getBills, createBill, deleteBill, markBillPaid, getBillStats, updateBill } from "../services/api";
 
 interface Bill {
   id: number;
@@ -30,6 +30,8 @@ export default function Bills() {
 
   const [form, setForm] = useState({ title: "", description: "", type: "tuition", amount: "", due: "", academic_year: "", user_id: "" });
   const [saving, setSaving] = useState(false);
+  const [editBill, setEditBill] = useState<Bill | null>(null);
+  const [editForm, setEditForm] = useState({ title: "", description: "", type: "", amount: "", due: "", academic_year: "" });
 
   useEffect(() => { loadBills(); loadStats(); }, []);
 
@@ -65,6 +67,43 @@ export default function Bills() {
 
   async function handleMarkPaid(id: number) {
     try { await markBillPaid(id, { payment_method: "cash" }); loadBills(); loadStats(); } catch {}
+  }
+
+  function handleEditStart(bill: Bill) {
+    setEditBill(bill);
+    setEditForm({
+      title: bill.title,
+      description: bill.description || "",
+      type: bill.type,
+      amount: String(bill.amount),
+      due: bill.due.split("T")[0],
+      academic_year: bill.academic_year || "",
+    });
+  }
+
+  async function handleEditSave() {
+    if (!editBill || !editForm.title || !editForm.amount || !editForm.due) return;
+    setSaving(true);
+    try {
+      await updateBill(editBill.id, {
+        title: editForm.title,
+        description: editForm.description || null,
+        type: editForm.type,
+        amount: parseFloat(editForm.amount),
+        due: editForm.due,
+        academic_year: editForm.academic_year || null,
+      });
+      setEditBill(null);
+      loadBills();
+      loadStats();
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Failed to update bill");
+    }
+    setSaving(false);
+  }
+
+  function handleEditCancel() {
+    setEditBill(null);
   }
 
   const filtered = bills.filter((b) => filter === "all" || b.status === filter);
@@ -144,16 +183,40 @@ export default function Bills() {
             <tbody>
               {filtered.map((bill) => (
                 <tr key={bill.id} className="border-t hover:bg-muted/30">
-                  <td className="p-3"><div className="font-medium">{bill.user?.name || `User #${bill.user_id}`}</div><div className="text-xs text-muted-foreground">{bill.user?.student_id || bill.user?.email}</div></td>
-                  <td className="p-3">{bill.title}</td>
-                  <td className="p-3 capitalize text-xs">{bill.type}</td>
-                  <td className="p-3 text-right font-semibold">৳{parseFloat(String(bill.amount)).toLocaleString()}</td>
-                  <td className="p-3 text-xs">{new Date(bill.due).toLocaleDateString()}</td>
-                  <td className="p-3 text-center"><span className={`text-xs px-2 py-0.5 rounded-full ${bill.status === "paid" ? "bg-green-100 text-green-700" : bill.status === "overdue" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"}`}>{bill.status}</span></td>
-                  <td className="p-3 text-center"><div className="flex items-center justify-center gap-1">
-                    {bill.status !== "paid" && <button onClick={() => handleMarkPaid(bill.id)} className="p-1 text-green-600 hover:text-green-700" title="Mark as paid"><CheckCircle className="h-4 w-4" /></button>}
-                    <button onClick={() => handleDelete(bill.id)} className="p-1 text-red-600 hover:text-red-700" title="Delete"><Trash2 className="h-4 w-4" /></button>
-                  </div></td>
+                  {editBill?.id === bill.id ? (
+                    <>
+                      <td className="p-3 text-xs text-muted-foreground">{bill.user?.name || `User #${bill.user_id}`}</td>
+                      <td className="p-3"><input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} className="bg-background border border-border rounded px-2 py-1 text-xs w-full" /></td>
+                      <td className="p-3">
+                        <select value={editForm.type} onChange={(e) => setEditForm({ ...editForm, type: e.target.value })} className="bg-background border border-border rounded px-2 py-1 text-xs capitalize w-full">
+                          {["tuition", "exam", "lab", "library", "hostel", "other"].map((t) => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                      </td>
+                      <td className="p-3 text-right"><input type="number" value={editForm.amount} onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })} className="bg-background border border-border rounded px-2 py-1 text-xs w-20 text-right" /></td>
+                      <td className="p-3"><input type="date" value={editForm.due} onChange={(e) => setEditForm({ ...editForm, due: e.target.value })} className="bg-background border border-border rounded px-2 py-1 text-xs w-full" /></td>
+                      <td className="p-3 text-center"><span className={`text-xs px-2 py-0.5 rounded-full ${bill.status === "paid" ? "bg-green-100 text-green-700" : bill.status === "overdue" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"}`}>{bill.status}</span></td>
+                      <td className="p-3 text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          <button onClick={handleEditSave} disabled={saving} className="p-1 text-green-600 hover:text-green-700" title="Save"><Save className="h-4 w-4" /></button>
+                          <button onClick={handleEditCancel} className="p-1 text-muted-foreground hover:text-foreground" title="Cancel"><X className="h-4 w-4" /></button>
+                        </div>
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td className="p-3"><div className="font-medium">{bill.user?.name || `User #${bill.user_id}`}</div><div className="text-xs text-muted-foreground">{bill.user?.student_id || bill.user?.email}</div></td>
+                      <td className="p-3">{bill.title}</td>
+                      <td className="p-3 capitalize text-xs">{bill.type}</td>
+                      <td className="p-3 text-right font-semibold">৳{parseFloat(String(bill.amount)).toLocaleString()}</td>
+                      <td className="p-3 text-xs">{new Date(bill.due).toLocaleDateString()}</td>
+                      <td className="p-3 text-center"><span className={`text-xs px-2 py-0.5 rounded-full ${bill.status === "paid" ? "bg-green-100 text-green-700" : bill.status === "overdue" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"}`}>{bill.status}</span></td>
+                      <td className="p-3 text-center"><div className="flex items-center justify-center gap-1">
+                        {bill.status !== "paid" && <button onClick={() => handleMarkPaid(bill.id)} className="p-1 text-green-600 hover:text-green-700" title="Mark as paid"><CheckCircle className="h-4 w-4" /></button>}
+                        <button onClick={() => handleEditStart(bill)} className="p-1 text-muted-foreground hover:text-foreground" title="Edit"><Edit2 className="h-4 w-4" /></button>
+                        <button onClick={() => handleDelete(bill.id)} className="p-1 text-red-600 hover:text-red-700" title="Delete"><Trash2 className="h-4 w-4" /></button>
+                      </div></td>
+                    </>
+                  )}
                 </tr>
               ))}
             </tbody>
