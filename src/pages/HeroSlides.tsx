@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Plus, Edit2, Trash2, Save, Loader2, GripVertical, Eye, EyeOff, Image } from "lucide-react";
+import { Plus, Edit2, Trash2, Save, Loader2, GripVertical, Image } from "lucide-react";
 import { getHeroSlides, createHeroSlide, updateHeroSlide, deleteHeroSlide } from "../services/api";
 import FileUpload from "../components/FileUpload";
 
