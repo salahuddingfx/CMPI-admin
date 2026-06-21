@@ -18,6 +18,7 @@ interface User {
   admission_date?: string;
   avatar?: string;
   status?: string;
+  sub_role?: string;
 }
 
 export default function Users() {
@@ -43,6 +44,7 @@ export default function Users() {
   const [bloodGroup, setBloodGroup] = useState("");
   const [address, setAddress] = useState("");
   const [status, setStatus] = useState("pending");
+  const [subRole, setSubRole] = useState("super_admin");
 
   // CSV Upload
   const csvFileRef = useRef<HTMLInputElement>(null);
@@ -106,6 +108,7 @@ export default function Users() {
     setBloodGroup("");
     setAddress("");
     setStatus("pending");
+    setSubRole("super_admin");
     setEditUserObj(null);
     setShowForm(false);
   };
@@ -125,6 +128,7 @@ export default function Users() {
     setBloodGroup(u.blood_group || "");
     setAddress(u.address || "");
     setStatus(u.status || "pending");
+    setSubRole(u.sub_role || "super_admin");
     setShowForm(true);
   };
 
@@ -145,6 +149,7 @@ export default function Users() {
       blood_group: bloodGroup || null,
       address: address || null,
       status,
+      sub_role: role === "admin" ? subRole : null,
     };
 
     if (password) {
@@ -297,7 +302,7 @@ export default function Users() {
                               : "bg-primary/10 text-primary border-primary/10"
                           }`}
                         >
-                          {u.role}
+                          {u.role === "admin" ? `${u.role} (${u.sub_role || 'super_admin'})` : u.role}
                         </span>
                         <span
                           className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase border ml-2 ${
@@ -390,6 +395,25 @@ export default function Users() {
                   </select>
                 </div>
               </div>
+
+              {role === "admin" && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5 col-span-2">
+                    <label className="text-xs font-black uppercase text-muted-foreground block">Administrative Role</label>
+                    <select
+                      value={subRole}
+                      onChange={(e) => setSubRole(e.target.value)}
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-semibold focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    >
+                      <option value="super_admin">Super Administrator (Full Access)</option>
+                      <option value="academic_editor">Academic Editor (Subjects, Routines, Results, Depts)</option>
+                      <option value="content_manager">PR & Content Manager (Notices, Events, Blogs, Slides, Links)</option>
+                      <option value="admission_officer">Admissions Officer (Applications, Faculty)</option>
+                      <option value="accountant">Financial Accountant (Bills, Payments, Reports)</option>
+                    </select>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5 col-span-2">
