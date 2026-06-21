@@ -16,6 +16,26 @@ export interface BtebSubjectInfo {
 export const BTEB_SUBJECTS: Record<string, BtebSubjectInfo> = {
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // SHARED / CROSS-DEPARTMENT SUBJECTS — used by multiple departments
+  // These should NOT be used for department detection
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  "26711": { name: "Basic Electricity", dept: "Shared" },
+  "26811": { name: "Basic Electronics", dept: "Shared" },
+  "27011": { name: "Workshop Technology", dept: "Shared" },
+  "27012": { name: "Basic Workshop Practice", dept: "Shared" },
+  "27041": { name: "Engineering Mechanics", dept: "Shared" },
+  "27051": { name: "Fluid Mechanics", dept: "Shared" },
+  "27061": { name: "Strength of Materials", dept: "Shared" },
+  "26721": { name: "Electrical Circuits-I", dept: "Shared" },
+  "26833": { name: "Industrial Electronics", dept: "Shared" },
+  "26842": { name: "Communication Engineering", dept: "Shared" },
+  "26845": { name: "Digital Electronics", dept: "Shared" },
+  "26853": { name: "Microprocessor & Microcontroller", dept: "Shared" },
+  "66721": { name: "Electrical Circuits-I", dept: "Shared" },
+  "66845": { name: "Industrial Electronics", dept: "Shared" },
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // GENERAL / SCIENCE SUBJECTS — shared by all departments
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -209,11 +229,11 @@ export const BTEB_SUBJECTS: Record<string, BtebSubjectInfo> = {
   "26754": { name: "Electrical Engineering Project-II", dept: "Electrical Technology" },
   "26761": { name: "AC Machine-I", dept: "Electrical Technology" },
   "26763": { name: "Electrical & Electronic Measurements-II", dept: "Electrical Technology" },
-  "26811": { name: "Basic Electronics", dept: "Electrical Technology" },
-  "26833": { name: "Industrial Electronics", dept: "Electrical Technology" },
-  "26842": { name: "Communication Engineering", dept: "Electrical Technology" },
-  "26845": { name: "Digital Electronics", dept: "Electrical Technology" },
-  "26853": { name: "Microprocessor & Microcontroller", dept: "Electrical Technology" },
+  "26811": { name: "Basic Electronics", dept: "Shared" },
+  "26833": { name: "Industrial Electronics", dept: "Shared" },
+  "26842": { name: "Communication Engineering", dept: "Shared" },
+  "26845": { name: "Digital Electronics", dept: "Shared" },
+  "26853": { name: "Microprocessor & Microcontroller", dept: "Shared" },
   "26667": { name: "Programming in C", dept: "Electrical Technology" },
 
   // 2016 Regulation — Electrical Technology (667xx)
@@ -294,12 +314,11 @@ export const BTEB_SUBJECTS: Record<string, BtebSubjectInfo> = {
   // MECHANICAL TECHNOLOGY
   // ═══════════════════════════════════════════════════════════════════════════
 
-  "27011": { name: "Workshop Technology", dept: "Mechanical Technology" },
-  "27012": { name: "Basic Workshop Practice", dept: "Mechanical Technology" },
-  "27041": { name: "Engineering Mechanics", dept: "Mechanical Technology" },
-  "27044": { name: "Applied Mechanics", dept: "Mechanical Technology" },
-  "27051": { name: "Fluid Mechanics & Machineries", dept: "Mechanical Technology" },
-  "27061": { name: "Strength of Materials", dept: "Mechanical Technology" },
+  "27011": { name: "Workshop Technology", dept: "Shared" },
+  "27012": { name: "Basic Workshop Practice", dept: "Shared" },
+  "27041": { name: "Engineering Mechanics", dept: "Shared" },
+  "27051": { name: "Fluid Mechanics & Machineries", dept: "Shared" },
+  "27061": { name: "Strength of Materials", dept: "Shared" },
   "27071": { name: "Design of Machine Elements", dept: "Mechanical Technology" },
   "27131": { name: "Engineering Thermodynamics", dept: "Mechanical Technology" },
   "27161": { name: "Engine Overhauling, Inspection & Testing", dept: "Mechanical Technology" },
@@ -320,20 +339,19 @@ export function getSubjectDepartment(code: string): string {
 
 /**
  * Infer a student's department from their list of referred subject codes.
- * Uses majority-vote across all recognizable (non-General) subject codes.
+ * Uses majority-vote across all recognizable (non-General, non-Shared) subject codes.
  */
 export function detectDepartmentFromSubjects(subjectCodes: string[]): string {
   const counts: Record<string, number> = {};
 
   subjectCodes.forEach((code) => {
     const dept = getSubjectDepartment(code);
-    if (dept !== "General") {
+    if (dept !== "General" && dept !== "Shared") {
       counts[dept] = (counts[dept] ?? 0) + 1;
     }
   });
 
   if (Object.keys(counts).length === 0) return "General Technology";
 
-  // Return department with most matching codes
   return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
 }
