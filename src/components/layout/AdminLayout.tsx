@@ -10,6 +10,7 @@ import {
   GraduationCap,
   Award,
   FileCheck,
+  CalendarClock,
   Share2,
   Settings,
   LogOut,
@@ -19,7 +20,9 @@ import {
   Sun,
   Moon,
   User as UserIcon,
-  ChevronRight
+  ChevronRight,
+  DollarSign,
+  Check
 } from "lucide-react";
 import { logout } from "../../services/api";
 
@@ -33,6 +36,43 @@ export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+
+  const [notifications, setNotifications] = useState([
+    {
+      id: "1",
+      title: "New Registration Request",
+      description: "Student Ln. Md. Didar Ullah requested portal registration approval.",
+      time: "5m ago",
+      read: false,
+    },
+    {
+      id: "2",
+      title: "BTEB Result Processed",
+      description: "Successfully processed 3rd Semester Civil technology result PDF.",
+      time: "1h ago",
+      read: false,
+    },
+    {
+      id: "3",
+      title: "Routine Published",
+      description: "Exam routine for Fall 2026 term has been published.",
+      time: "1d ago",
+      read: true,
+    },
+  ]);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const markAllAsRead = () => {
+    setNotifications(notifications.map((n) => ({ ...n, read: true })));
+  };
+
+  const markAsRead = (id: string) => {
+    setNotifications(
+      notifications.map((n) => (n.id === id ? { ...n, read: true } : n))
+    );
+  };
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("cmpi-admin-theme");
@@ -55,6 +95,9 @@ export default function AdminLayout() {
     { name: "User Management", path: "/users", icon: UserIcon },
     { name: "BTEB Results Board", path: "/results", icon: Award },
     { name: "Institute Results", path: "/institute-results", icon: FileCheck },
+    { name: "Class Routines", path: "/class-routines", icon: CalendarClock },
+    { name: "Bills & Payments", path: "/bills", icon: DollarSign },
+    { name: "Reports", path: "/reports", icon: FileText },
     { name: "Social Links", path: "/social-links", icon: Share2 },
     { name: "Site Settings", path: "/site-settings", icon: Settings },
   ];
@@ -178,18 +221,99 @@ export default function AdminLayout() {
                 const isDark = document.documentElement.classList.contains("dark");
                 localStorage.setItem("cmpi-admin-theme", isDark ? "dark" : "light");
               }}
-              className="rounded-xl border border-border p-2.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150 shadow-sm"
+              className="relative w-10 h-10 flex items-center justify-center rounded-xl border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150 shadow-sm"
             >
-              <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+              <Sun className="absolute h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
               <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
             </button>
 
-            {/* Quick action buttons */}
+            {/* Quick action buttons / Notification Bell */}
             <div className="relative">
-              <button className="rounded-xl border border-border p-2.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150 shadow-sm">
+              <button 
+                onClick={() => setNotificationsOpen(!notificationsOpen)}
+                className="relative w-10 h-10 flex items-center justify-center rounded-xl border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150 shadow-sm"
+              >
                 <Bell className="h-5 w-5" />
-                <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-secondary ring-2 ring-card animate-pulse"></span>
+                {unreadCount > 0 && (
+                  <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-card animate-pulse"></span>
+                )}
               </button>
+
+              {notificationsOpen && (
+                <>
+                  {/* Backdrop overlay to close when clicking outside */}
+                  <div 
+                    className="fixed inset-0 z-30" 
+                    onClick={() => setNotificationsOpen(false)}
+                  />
+                  {/* Dropdown Card */}
+                  <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl border border-border/80 bg-card/95 backdrop-blur-md p-4 shadow-2xl z-40 transition-all">
+                    <div className="flex items-center justify-between border-b border-border pb-3 mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-foreground">Notifications</span>
+                        {unreadCount > 0 && (
+                          <span className="rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs font-semibold">
+                            {unreadCount} new
+                          </span>
+                        )}
+                      </div>
+                      {unreadCount > 0 && (
+                        <button 
+                          onClick={markAllAsRead}
+                          className="text-xs text-primary hover:underline font-semibold"
+                        >
+                          Mark all as read
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="max-h-72 overflow-y-auto space-y-2">
+                      {notifications.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-8 text-muted-foreground gap-2">
+                          <Bell className="h-8 w-8 opacity-40" />
+                          <p className="text-xs font-semibold">No notifications</p>
+                        </div>
+                      ) : (
+                        notifications.map((n) => (
+                          <div 
+                            key={n.id} 
+                            onClick={() => markAsRead(n.id)}
+                            className={`flex items-start gap-3 rounded-xl p-2.5 transition-colors cursor-pointer ${
+                              n.read ? "hover:bg-muted/50" : "bg-primary/5 hover:bg-primary/10 border border-primary/10"
+                            }`}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2 mb-0.5">
+                                <span className={`text-xs font-extrabold truncate ${n.read ? "text-foreground" : "text-primary"}`}>
+                                  {n.title}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground font-medium shrink-0">
+                                  {n.time}
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground line-clamp-2">
+                                {n.description}
+                              </p>
+                            </div>
+                            {!n.read && (
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  markAsRead(n.id);
+                                }}
+                                className="h-6 w-6 flex items-center justify-center rounded-lg hover:bg-primary/20 text-primary shrink-0 transition-colors"
+                                title="Mark as read"
+                              >
+                                <Check className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Quick Status badge */}
