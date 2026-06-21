@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { ChangeEvent } from "react";
-import { Upload, AlertTriangle, CheckCircle, RefreshCw, X, Save, Info, Link, Loader2 } from "lucide-react";
+import { Upload, AlertTriangle, CheckCircle, RefreshCw, X, Save, Info, Link, Loader2, Database, FileText, HardDrive, Clock, ChevronDown, ChevronUp } from "lucide-react";
 import { detectDepartmentFromSubjects } from "../utils/btebSubjectCodes";
-import { importBtebResults, importBtebResultsFromDrive, getImportJobStatus } from "../services/api";
+import { importBtebResults, importBtebResultsFromDrive, getImportJobStatus, getBtebStats } from "../services/api";
 
 interface ParsedResult {
   roll: string;
@@ -22,7 +22,18 @@ interface ImportJobStatus {
   total_files: number;
   processed_files: number;
   total_results: number;
-  error_log: string[] | null;
+  error_log: any;
+  created_at?: string;
+  updated_at?: string;
+  file_details?: { name: string; size_bytes: number; size_human: string; results: number; duration_sec: number }[];
+}
+
+interface BtebStats {
+  total_results: number;
+  total_rolls: number;
+  departments: string[];
+  semesters: string[];
+  import_jobs: ImportJobStatus[];
 }
 
 const loadPdfJs = (): Promise<any> => {
@@ -63,11 +74,14 @@ export default function BtebResults() {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [driveUrl, setDriveUrl] = useState("");
   const [parseProgress, setParseProgress] = useState<ParseProgress | null>(null);
+  const [stats, setStats] = useState<BtebStats | null>(null);
+  const [expandedJob, setExpandedJob] = useState<number | null>(null);
 
   // Drive import progress state
   const [driveJob, setDriveJob] = useState<ImportJobStatus | null>(null);
   const [driveSyncing, setDriveSyncing] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [currentTime, setCurrentTime] = useState<number>(Date.now());
 
   const stopPolling = useCallback(() => {
     if (pollRef.current) {
@@ -79,6 +93,34 @@ export default function BtebResults() {
   useEffect(() => {
     return () => stopPolling();
   }, [stopPolling]);
+
+  useEffect(() => {
+    if (!driveSyncing) return;
+    const timer = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [driveSyncing]);
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    try {
+      const data = await getBtebStats();
+      setStats(data);
+
+      const latestJob = data.import_jobs?.[0];
+      if (latestJob && (latestJob.status === "pending" || latestJob.status === "processing")) {
+        setDriveJob(latestJob);
+        setDriveSyncing(true);
+        pollJobStatus(latestJob.id);
+      }
+    } catch {
+      // Stats endpoint might not have data yet
+    }
+  };
 
   const pollJobStatus = useCallback((jobId: number) => {
     stopPolling();
@@ -99,6 +141,7 @@ export default function BtebResults() {
             }
             setSuccess(msg);
             setDriveUrl("");
+            loadStats();
           } else {
             const errMsg = data.error_log?.[0] || "Import failed. Check logs.";
             setError(typeof errMsg === "string" ? errMsg : JSON.stringify(errMsg));
@@ -208,6 +251,7 @@ export default function BtebResults() {
           setSuccess(`Import success! Successfully uploaded ${response.count} result records from ${pdfFiles.length} PDF files.`);
           setParsedData([]);
           setParsedCount(0);
+          loadStats();
         } catch (importErr: any) {
           console.error(importErr);
           setError(importErr.response?.data?.message || "Failed to auto-sync parsed records to the backend database.");
@@ -377,6 +421,7 @@ export default function BtebResults() {
       setSuccess(`Import completed! Successfully registered ${response.count} result records to the database.`);
       setParsedData([]);
       setParsedCount(0);
+      loadStats();
     } catch (err: any) {
       console.error(err);
       setError(err.response?.data?.message || "Failed to sync parsed records to backend.");
@@ -385,18 +430,124 @@ export default function BtebResults() {
     }
   };
 
-  // Drive progress percentage
   const driveProgress = driveJob && driveJob.total_files > 0
     ? Math.round((driveJob.processed_files / driveJob.total_files) * 100)
     : 0;
 
+  const totalFileSize = (files: { size_bytes: number }[]) =>
+    files.reduce((sum, f) => sum + (f.size_bytes || 0), 0);
+
+  const totalFileResults = (files: { results: number }[]) =>
+    files.reduce((sum, f) => sum + (f.results || 0), 0);
+
+  const formatDuration = (sec: number) => {
+    if (sec < 60) return `${sec}s`;
+    const mins = Math.floor(sec / 60);
+    const secs = Math.round(sec % 60);
+    return `${mins}m ${secs}s`;
+  };
+
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${units[i]}`;
+  };
+
+  const getProgressDetails = () => {
+    if (!driveJob) return null;
+
+    const jobCreatedAt = driveJob.created_at ? new Date(driveJob.created_at).getTime() : Date.now();
+    const elapsedMs = currentTime - jobCreatedAt;
+    const elapsedSeconds = Math.max(0, Math.floor(elapsedMs / 1000));
+
+    const processed = driveJob.processed_files || 0;
+    const total = driveJob.total_files || 0;
+    const remaining = Math.max(0, total - processed);
+
+    const isDownloading = driveJob.error_log && typeof driveJob.error_log === "object" && driveJob.error_log.phase === "downloading";
+    
+    let speedLabel = "";
+    let etaLabel = "Calculating...";
+    let avgSecondsPerFile = 0;
+
+    if (processed > 0) {
+      avgSecondsPerFile = elapsedSeconds / processed;
+      speedLabel = `${avgSecondsPerFile.toFixed(1)}s/file`;
+      const remainingSeconds = remaining * avgSecondsPerFile;
+      etaLabel = formatDuration(Math.round(remainingSeconds));
+    }
+
+    return {
+      elapsed: formatDuration(elapsedSeconds),
+      eta: etaLabel,
+      speed: speedLabel,
+      isDownloading,
+      processed,
+      total,
+      remaining
+    };
+  };
+
+  const progressDetails = getProgressDetails();
+
   return (
     <div className="space-y-6">
-      {/* Header section */}
+      {/* Header */}
       <div>
         <h1 className="text-3xl font-black text-foreground tracking-tight">BTEB Results Board Portal</h1>
         <p className="text-sm text-muted-foreground font-semibold">Upload and parse official Bangladesh Technical Education Board PDF result sheets to synchronize student portals</p>
       </div>
+
+      {/* Stats Dashboard */}
+      {stats && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="glass-card p-4 border">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-primary/10">
+                <Database className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-black text-foreground">{stats.total_results.toLocaleString()}</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Total Results</p>
+              </div>
+            </div>
+          </div>
+          <div className="glass-card p-4 border">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-primary/10">
+                <FileText className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-black text-foreground">{stats.total_rolls.toLocaleString()}</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Total Rolls</p>
+              </div>
+            </div>
+          </div>
+          <div className="glass-card p-4 border">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-primary/10">
+                <HardDrive className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-black text-foreground">{stats.departments.length}</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Departments</p>
+              </div>
+            </div>
+          </div>
+          <div className="glass-card p-4 border">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-primary/10">
+                <Clock className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-black text-foreground">{stats.import_jobs.length}</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Import Jobs</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 items-start">
         {/* Main interactive panel */}
@@ -491,55 +642,66 @@ export default function BtebResults() {
                   </button>
                 </div>
                 <p className="text-[11px] text-muted-foreground font-semibold">
-                  Paste a public Google Drive folder link. Semester, regulation, and holding year are auto-detected from filenames (e.g. RESULT_4th_2022_Regulation.pdf). Subfolders like Rescrutiny &amp; Correction are processed recursively.
+                  Paste a public Google Drive folder link. Semester, regulation, and holding year are auto-detected from filenames. Subfolders like Rescrutiny &amp; Correction are processed recursively.
                 </p>
               </div>
 
               {/* Progress Bar - shown during drive import */}
-              {driveJob && (driveJob.status === "pending" || driveJob.status === "processing") && (
+              {driveJob && (driveJob.status === "pending" || driveJob.status === "processing") && progressDetails && (
                 <div className="space-y-3 p-4 rounded-xl border border-primary/20 bg-primary/5">
                   <div className="flex items-center justify-between text-xs font-bold">
                     <div className="flex items-center gap-2 text-primary">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       <span>
                         {driveJob.status === "pending" && "Queued... Waiting to start"}
-                        {driveJob.status === "processing" && `Processing files... ${driveJob.processed_files}/${driveJob.total_files}`}
+                        {driveJob.status === "processing" && (
+                          progressDetails.isDownloading
+                            ? "Phase 1/2: Downloading PDFs from Google Drive..."
+                            : `Phase 2/2: Processing files... ${progressDetails.processed}/${progressDetails.total}`
+                        )}
                       </span>
                     </div>
                     <span className="text-muted-foreground">{driveProgress}%</span>
                   </div>
-
-                  {/* Progress bar */}
                   <div className="h-2.5 bg-muted rounded-full overflow-hidden">
                     <div
                       className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
                       style={{ width: `${driveProgress}%` }}
                     />
                   </div>
-
-                  <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground">
+                  <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground flex-wrap gap-2">
                     <span>
-                      {driveJob.processed_files} of {driveJob.total_files} files processed
+                      {progressDetails.processed} of {progressDetails.total} files processed
+                      {driveJob.status === "processing" && !progressDetails.isDownloading && progressDetails.speed && (
+                        <span className="text-primary ml-1.5 font-bold">({progressDetails.speed})</span>
+                      )}
                     </span>
-                    <span className="text-primary font-bold">
-                      {driveJob.total_results} results found
-                    </span>
+                    <span className="text-primary font-bold">{driveJob.total_results.toLocaleString()} results found</span>
                   </div>
+                  {driveJob.status === "processing" && (
+                    <div className="flex items-center justify-between border-t border-primary/10 pt-2 text-[10px] font-bold text-muted-foreground">
+                      <span>Elapsed: <span className="text-foreground">{progressDetails.elapsed}</span></span>
+                      <span>ETA: <span className="text-foreground font-black">{progressDetails.eta}</span></span>
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Completion Summary */}
+              {/* Completion Summary with file details */}
               {driveJob && driveJob.status === "completed" && (
-                <div className="flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 text-green-700 p-4 text-xs font-bold leading-relaxed">
-                  <CheckCircle className="h-5 w-5 shrink-0 mt-0.5" />
-                  <div>
-                    <p>Import completed successfully!</p>
-                    <p className="mt-1 text-green-600">
-                      {driveJob.total_files} files processed &middot; {driveJob.total_results} result records imported
-                      {driveJob.error_log && driveJob.error_log.length > 0 && (
-                        <span className="text-yellow-600"> &middot; {driveJob.error_log.length} warnings</span>
-                      )}
-                    </p>
+                <div className="space-y-3 p-4 rounded-xl border border-green-200 bg-green-50 text-green-700 text-xs font-bold leading-relaxed">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p>Import completed successfully!</p>
+                      <div className="mt-2 flex flex-wrap gap-3 text-[11px]">
+                        <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded-full">{driveJob.total_files} files</span>
+                        <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded-full">{driveJob.total_results.toLocaleString()} results</span>
+                        {driveJob.error_log && driveJob.error_log.length > 0 && (
+                          <span className="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">{driveJob.error_log.length} warnings</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -582,7 +744,7 @@ export default function BtebResults() {
                 </div>
                 {parseProgress.phase === "parsing" && (
                   <p className="text-[11px] text-muted-foreground font-semibold truncate">
-                    📄 {parseProgress.fileName}
+                    {parseProgress.fileName}
                   </p>
                 )}
               </div>
@@ -675,34 +837,108 @@ export default function BtebResults() {
           )}
         </div>
 
-        {/* Informative Side Card */}
-        <div className="glass-card p-6 border space-y-4 bg-muted/20">
-          <div className="flex items-center gap-2 text-primary">
-            <Info className="h-5 w-5" />
-            <h4 className="text-sm font-black uppercase tracking-wider">Parsing Specifications</h4>
-          </div>
-          <div className="text-xs font-semibold text-muted-foreground space-y-3 leading-relaxed">
-            <p>
-              This parser operates completely **in-browser** (client-side) using `pdf.js`. It performs pattern matching and heuristic lookups to process transcripts reliably without exposing data to external processors.
-            </p>
-            <div className="bg-card border rounded-xl p-3 space-y-2 text-[11px]">
-              <p className="font-bold text-foreground">Pattern Rules Supported:</p>
-              <ul className="list-disc pl-4 space-y-1.5 font-mono text-[10px]">
-                <li><span className="text-primary">Passed:</span> Roll (GPA) &rarr; e.g. 123456 (3.75)</li>
-                <li><span className="text-primary">Referred:</span> Roll &#123; Codes(type) &#125; &rarr; e.g. 123458 &#123; 25911(T) &#125;</li>
-              </ul>
+        {/* Import History Sidebar */}
+        <div className="space-y-4">
+          <div className="glass-card p-6 border space-y-4 bg-muted/20">
+            <div className="flex items-center gap-2 text-primary">
+              <Clock className="h-5 w-5" />
+              <h4 className="text-sm font-black uppercase tracking-wider">Import History</h4>
             </div>
-            <p>
-              Only pages containing the **CMPI Center Code (16058)** are processed. If a technology header is omitted on continuation pages, the parser automatically links student rolls to the last matching department.
-            </p>
-            <div className="bg-card border rounded-xl p-3 space-y-2 text-[11px]">
-              <p className="font-bold text-foreground">Drive Import (Background Job):</p>
-              <ul className="list-disc pl-4 space-y-1.5">
-                <li>Paste a Google Drive folder link</li>
-                <li>Files are downloaded & parsed server-side</li>
-                <li>Progress updates every 2 seconds</li>
-                <li>Supports folders with 50+ PDF files</li>
-              </ul>
+            {stats && stats.import_jobs.length > 0 ? (
+              <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                {stats.import_jobs.map((job) => (
+                  <div key={job.id} className="border border-border rounded-xl p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex rounded-full px-2 py-0.5 text-[9px] font-black border ${
+                          job.status === "completed" ? "bg-green-100 text-green-700 border-green-200"
+                          : job.status === "failed" ? "bg-red-100 text-red-700 border-red-200"
+                          : "bg-yellow-100 text-yellow-700 border-yellow-200"
+                        }`}>
+                          {job.status}
+                        </span>
+                        <span className="text-[10px] font-bold text-muted-foreground">#{job.id}</span>
+                      </div>
+                      <span className="text-[10px] font-semibold text-muted-foreground">
+                        {job.created_at ? new Date(job.created_at).toLocaleDateString() : ""}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[10px] font-bold text-foreground flex-wrap gap-1">
+                      <div className="flex items-center gap-2">
+                        <span>{job.total_files} files</span>
+                        <span>&middot;</span>
+                        <span>{(job.total_results || 0).toLocaleString()} results</span>
+                      </div>
+                      {job.created_at && job.updated_at && (job.status === "completed" || job.status === "failed") && (
+                        <span className="text-[9px] text-muted-foreground font-semibold">
+                          Took: {formatDuration(Math.max(0, Math.floor((new Date(job.updated_at).getTime() - new Date(job.created_at).getTime()) / 1000)))}
+                        </span>
+                      )}
+                    </div>
+                    {job.error_log && Array.isArray(job.error_log) && job.error_log.length > 0 && (
+                      <p className="text-[9px] text-yellow-600 font-bold">{job.error_log.length} warnings</p>
+                    )}
+                    {/* Per-file details */}
+                    {job.file_details && job.file_details.length > 0 && (
+                      <div className="border-t border-border pt-2 mt-2">
+                        <button
+                          onClick={() => setExpandedJob(expandedJob === job.id ? null : job.id)}
+                          className="flex items-center gap-1 text-[9px] font-bold text-muted-foreground hover:text-foreground transition"
+                        >
+                          {expandedJob === job.id ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                          {job.file_details.length} files &middot; {formatDuration(job.file_details.reduce((s, f) => s + f.duration_sec, 0))} total &middot; {formatBytes(totalFileSize(job.file_details))}
+                        </button>
+                        {expandedJob === job.id && (
+                          <div className="mt-2 space-y-1.5 max-h-[200px] overflow-y-auto">
+                            {job.file_details.map((file, i) => (
+                              <div key={i} className="flex items-center justify-between text-[9px] font-semibold text-muted-foreground bg-muted/30 rounded-lg px-2 py-1.5">
+                                <span className="truncate max-w-[140px]" title={file.name}>{file.name}</span>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className="text-primary font-bold">{file.results}</span>
+                                  <span className="text-muted-foreground">{file.size_human}</span>
+                                  <span className="text-muted-foreground">{file.duration_sec}s</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs font-semibold text-muted-foreground text-center py-4">No import history yet</p>
+            )}
+          </div>
+
+          {/* Info Card */}
+          <div className="glass-card p-6 border space-y-4 bg-muted/20">
+            <div className="flex items-center gap-2 text-primary">
+              <Info className="h-5 w-5" />
+              <h4 className="text-sm font-black uppercase tracking-wider">Parsing Specs</h4>
+            </div>
+            <div className="text-xs font-semibold text-muted-foreground space-y-3 leading-relaxed">
+              <p>
+                Client-side parsing via pdf.js. Pattern matching for CMPI center codes (16058/74026). Only matching pages are processed.
+              </p>
+              <div className="bg-card border rounded-xl p-3 space-y-2 text-[11px]">
+                <p className="font-bold text-foreground">Patterns:</p>
+                <ul className="list-disc pl-4 space-y-1.5 font-mono text-[10px]">
+                  <li><span className="text-primary">Passed:</span> Roll (GPA)</li>
+                  <li><span className="text-primary">Referred:</span> Roll &#123; Codes &#125;</li>
+                  <li><span className="text-primary">Multi-GPA:</span> Roll &#123; gpa1: val, gpa2: ref &#125;</li>
+                </ul>
+              </div>
+              <div className="bg-card border rounded-xl p-3 space-y-2 text-[11px]">
+                <p className="font-bold text-foreground">Drive Import:</p>
+                <ul className="list-disc pl-4 space-y-1.5">
+                  <li>Paste Google Drive folder link</li>
+                  <li>Files downloaded &amp; parsed server-side</li>
+                  <li>Per-file size, time, results tracked</li>
+                  <li>Rescrutiny subfolders auto-detected</li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
