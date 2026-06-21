@@ -23,9 +23,11 @@ import {
   ChevronRight,
   DollarSign,
   Check,
-  Sliders
+  Sliders,
+  BookMarked,
+  Activity
 } from "lucide-react";
-import { logout } from "../../services/api";
+import { logout, getNotifications, markAllNotificationsRead, markNotificationRead } from "../../services/api";
 
 interface MenuItem {
   name: string;
@@ -38,41 +40,68 @@ export default function AdminLayout() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [notifications, setNotifications] = useState([
-    {
-      id: "1",
-      title: "New Registration Request",
-      description: "Student Ln. Md. Didar Ullah requested portal registration approval.",
-      time: "5m ago",
-      read: false,
-    },
-    {
-      id: "2",
-      title: "BTEB Result Processed",
-      description: "Successfully processed 3rd Semester Civil technology result PDF.",
-      time: "1h ago",
-      read: false,
-    },
-    {
-      id: "3",
-      title: "Routine Published",
-      description: "Exam routine for Fall 2026 term has been published.",
-      time: "1d ago",
-      read: true,
-    },
-  ]);
+  interface NotificationItem {
+    id: number;
+    title: string;
+    description: string;
+    type: string;
+    is_read: boolean;
+    created_at: string;
+    updated_at: string;
+  }
+
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
 
-  const markAllAsRead = () => {
-    setNotifications(notifications.map((n) => ({ ...n, read: true })));
+  const fetchNotifications = async () => {
+    try {
+      const data = await getNotifications();
+      setNotifications(data);
+    } catch (err) {
+      console.error("Failed to load notifications:", err);
+    }
   };
 
-  const markAsRead = (id: string) => {
-    setNotifications(
-      notifications.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 10000); // Poll every 10s
+    return () => clearInterval(interval);
+  }, []);
+
+  const markAllAsRead = async () => {
+    try {
+      await markAllNotificationsRead();
+      setNotifications(notifications.map((n) => ({ ...n, is_read: true })));
+    } catch (err) {
+      console.error("Failed to mark all notifications as read:", err);
+    }
+  };
+
+  const markAsRead = async (id: number) => {
+    try {
+      await markNotificationRead(id);
+      setNotifications(
+        notifications.map((n) => (n.id === id ? { ...n, is_read: true } : n))
+      );
+    } catch (err) {
+      console.error("Failed to mark notification as read:", err);
+    }
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffMs = now.getTime() - date.getTime();
+    const diffSec = Math.floor(diffMs / 1000);
+    if (diffSec < 60) return "just now";
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return `${diffHr}h ago`;
+    const diffDays = Math.floor(diffHr / 24);
+    return `${diffDays}d ago`;
   };
 
   useEffect(() => {
@@ -96,12 +125,14 @@ export default function AdminLayout() {
     { name: "User Management", path: "/users", icon: UserIcon },
     { name: "BTEB Results Board", path: "/results", icon: Award },
     { name: "Institute Results", path: "/institute-results", icon: FileCheck },
+    { name: "Subjects", path: "/subjects", icon: BookMarked },
     { name: "Class Routines", path: "/class-routines", icon: CalendarClock },
     { name: "Bills & Payments", path: "/bills", icon: DollarSign },
     { name: "Reports", path: "/reports", icon: FileText },
     { name: "Social Links", path: "/social-links", icon: Share2 },
     { name: "Hero Slides", path: "/hero-slides", icon: Sliders },
     { name: "Site Settings", path: "/site-settings", icon: Settings },
+    { name: "System Status", path: "/system-status", icon: Activity },
   ];
 
   const handleLogout = async () => {
@@ -281,23 +312,23 @@ export default function AdminLayout() {
                             key={n.id} 
                             onClick={() => markAsRead(n.id)}
                             className={`flex items-start gap-3 rounded-xl p-2.5 transition-colors cursor-pointer ${
-                              n.read ? "hover:bg-muted/50" : "bg-primary/5 hover:bg-primary/10 border border-primary/10"
+                              n.is_read ? "hover:bg-muted/50" : "bg-primary/5 hover:bg-primary/10 border border-primary/10"
                             }`}
                           >
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between gap-2 mb-0.5">
-                                <span className={`text-xs font-extrabold truncate ${n.read ? "text-foreground" : "text-primary"}`}>
+                                <span className={`text-xs font-extrabold truncate ${n.is_read ? "text-foreground" : "text-primary"}`}>
                                   {n.title}
                                 </span>
                                 <span className="text-[10px] text-muted-foreground font-medium shrink-0">
-                                  {n.time}
+                                  {formatTimeAgo(n.created_at)}
                                 </span>
                               </div>
                               <p className="text-xs text-muted-foreground line-clamp-2">
                                 {n.description}
                               </p>
                             </div>
-                            {!n.read && (
+                            {!n.is_read && (
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
