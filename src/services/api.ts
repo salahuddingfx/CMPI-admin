@@ -228,6 +228,10 @@ export async function getImportJobStatus(jobId: number) {
   const response = await api.get(`/bteb-results/import-status/${jobId}`);
   return response.data;
 }
+export async function getBtebStats() {
+  const response = await api.get("/bteb-results/stats");
+  return response.data;
+}
 
 // Institute results management
 export async function searchInstituteResults(roll: string) {
@@ -358,3 +362,64 @@ export async function deleteHeroSlide(id: number) {
   const response = await api.delete(`/hero-slides/${id}`);
   return response.data;
 }
+
+// Subjects management
+export async function getSubjects(params?: { department?: string; semester?: string }) {
+  const response = await api.get("/subjects", { params });
+  return response.data;
+}
+export async function createSubject(data: Record<string, any>) {
+  const response = await api.post("/subjects", data);
+  return response.data;
+}
+export async function updateSubject(id: number, data: Record<string, any>) {
+  const response = await api.put(`/subjects/${id}`, data);
+  return response.data;
+}
+export async function deleteSubject(id: number) {
+  const response = await api.delete(`/subjects/${id}`);
+  return response.data;
+}
+
+// Bills update
+export async function updateBill(id: number, data: Record<string, any>) {
+  const response = await api.put(`/bills/${id}`, data);
+  return response.data;
+}
+
+// Class routine update
+export async function updateClassRoutine(id: number, formData: FormData) {
+  const response = await api.put(`/class-routines/${id}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data;
+}
+
+// Institute results update
+export async function updateInstituteResult(id: number, data: Record<string, any>) {
+  const response = await api.put(`/institute-results/${id}`, data);
+  return response.data;
+}
+ 
+// System status
+export async function getSystemStatus() {
+  const response = await api.get("/system/status");
+  return response.data;
+}
+
+// Notifications
+export async function getNotifications() {
+  const response = await api.get("/notifications");
+  return response.data;
+}
+
+export async function markAllNotificationsRead() {
+  const response = await api.post("/notifications/mark-read");
+  return response.data;
+}
+
+export async function markNotificationRead(id: number | string) {
+  const response = await api.post(`/notifications/${id}/mark-read`);
+  return response.data;
+}
+
