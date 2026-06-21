@@ -14,6 +14,9 @@ const Admissions = lazy(() => import("../pages/Admissions"));
 const Users = lazy(() => import("../pages/Users"));
 const BtebResults = lazy(() => import("../pages/BtebResults"));
 const InstituteResults = lazy(() => import("../pages/InstituteResults"));
+const ClassRoutines = lazy(() => import("../pages/ClassRoutines"));
+const Bills = lazy(() => import("../pages/Bills"));
+const Reports = lazy(() => import("../pages/Reports"));
 const SocialLinks = lazy(() => import("../pages/SocialLinks"));
 const SiteSettings = lazy(() => import("../pages/SiteSettings"));
 
@@ -78,6 +81,9 @@ export default function AppRoutes() {
           <Route path="users" element={<Users />} />
           <Route path="results" element={<BtebResults />} />
           <Route path="institute-results" element={<InstituteResults />} />
+          <Route path="class-routines" element={<ClassRoutines />} />
+          <Route path="bills" element={<Bills />} />
+          <Route path="reports" element={<Reports />} />
           <Route path="social-links" element={<SocialLinks />} />
           <Route path="site-settings" element={<SiteSettings />} />
         </Route>

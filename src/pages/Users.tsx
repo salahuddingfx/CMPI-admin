@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { Plus, Edit2, Trash2, Search, X, Loader2, Save, User as UserIcon } from "lucide-react";
-import { getUsers, createUser, updateUser, deleteUser } from "../services/api";
+import { useEffect, useState, useRef } from "react";
+import { Plus, Edit2, Trash2, Search, X, Loader2, Save, User as UserIcon, Upload } from "lucide-react";
+import { getUsers, createUser, updateUser, deleteUser, bulkImportStudents } from "../services/api";
 
 interface User {
   id: number;
@@ -44,6 +44,12 @@ export default function Users() {
   const [address, setAddress] = useState("");
   const [status, setStatus] = useState("pending");
 
+  // CSV Upload
+  const csvFileRef = useRef<HTMLInputElement>(null);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState<string | null>(null);
+
   const currentAdmin = (() => {
     try {
       const userStr = localStorage.getItem("cmpi-admin-user");
@@ -63,6 +69,23 @@ export default function Users() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCsvUpload = async () => {
+    if (!csvFile) return;
+    setUploading(true);
+    setUploadResult(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", csvFile);
+      const result = await bulkImportStudents(formData);
+      setUploadResult(result.message);
+      setCsvFile(null);
+      loadUsers();
+    } catch (err: any) {
+      setUploadResult(err.response?.data?.message || "Upload failed");
+    }
+    setUploading(false);
   };
 
   useEffect(() => {
@@ -195,7 +218,30 @@ export default function Users() {
           <Plus className="h-5 w-5" />
           <span>New User Account</span>
         </button>
+        <div className="flex items-center gap-2">
+          <input ref={csvFileRef} type="file" accept=".csv,.txt" className="hidden" onChange={(e) => setCsvFile(e.target.files?.[0] || null)} />
+          <button
+            onClick={() => csvFileRef.current?.click()}
+            className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card hover:bg-muted px-4 py-2.5 text-sm font-semibold transition"
+          >
+            <Upload className="h-4 w-4" />
+            <span>Import CSV</span>
+          </button>
+          {csvFile && (
+            <button onClick={handleCsvUpload} disabled={uploading} className="flex items-center gap-2 rounded-xl bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 text-sm font-bold transition">
+              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              {uploading ? "Importing..." : `Upload ${csvFile.name}`}
+            </button>
+          )}
+        </div>
       </div>
+
+      {uploadResult && (
+        <div className="rounded-lg border bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 p-4 text-sm text-green-700 dark:text-green-400">
+          {uploadResult}
+          <button onClick={() => setUploadResult(null)} className="ml-2 text-green-500 hover:text-green-700">✕</button>
+        </div>
+      )}
 
       {/* Grid structure */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 items-start">
