@@ -318,7 +318,11 @@ export default function Users() {
                         <h3 className="text-base font-black text-foreground mt-1.5">{u.name}</h3>
                         <p className="text-xs font-semibold text-muted-foreground -mt-0.5">{u.email}</p>
                       </div>
-                      <UserIcon className="h-6 w-6 text-primary shrink-0 opacity-80" />
+                      {u.avatar ? (
+                        <img src={u.avatar} alt={u.name} className="h-10 w-10 rounded-full object-cover border-2 border-primary/20 shrink-0" />
+                      ) : (
+                        <UserIcon className="h-6 w-6 text-primary shrink-0 opacity-80" />
+                      )}
                     </div>
 
                     {u.role === "student" && (

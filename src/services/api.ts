@@ -6,7 +6,6 @@ export const api = axios.create({
   baseURL: API_BASE,
   timeout: 15000,
   headers: {
-    "Content-Type": "application/json",
     Accept: "application/json",
   },
 });
@@ -243,15 +242,11 @@ export async function getInstituteResultsStats() {
   return response.data;
 }
 export async function uploadInstituteCsv(formData: FormData) {
-  const response = await api.post("/institute-results/upload-csv", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const response = await api.post("/institute-results/upload-csv", formData);
   return response.data;
 }
 export async function uploadInstitutePdf(formData: FormData) {
-  const response = await api.post("/institute-results/upload-pdf", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const response = await api.post("/institute-results/upload-pdf", formData);
   return response.data;
 }
 export async function addInstituteResult(data: {
@@ -303,9 +298,7 @@ export async function getClassRoutines(params?: { department?: string; semester?
   return response.data;
 }
 export async function uploadClassRoutine(formData: FormData) {
-  const response = await api.post("/class-routines/upload", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const response = await api.post("/class-routines/upload", formData);
   return response.data;
 }
 export async function deleteClassRoutine(id: number) {
@@ -339,9 +332,7 @@ export async function bulkCreateBills(data: Record<string, any>) {
   return response.data;
 }
 export async function bulkImportStudents(formData: FormData) {
-  const response = await api.post("/users/bulk-import", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const response = await api.post("/users/bulk-import", formData);
   return response.data;
 }
 
@@ -389,9 +380,7 @@ export async function updateBill(id: number, data: Record<string, any>) {
 
 // Class routine update
 export async function updateClassRoutine(id: number, formData: FormData) {
-  const response = await api.put(`/class-routines/${id}`, formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const response = await api.put(`/class-routines/${id}`, formData);
   return response.data;
 }
 
@@ -420,6 +409,64 @@ export async function markAllNotificationsRead() {
 
 export async function markNotificationRead(id: number | string) {
   const response = await api.post(`/notifications/${id}/mark-read`);
+  return response.data;
+}
+
+// Gallery
+export async function getGalleryAlbums() {
+  const response = await api.get("/gallery-albums");
+  return response.data;
+}
+
+export async function getGalleryAlbum(id: number) {
+  const response = await api.get(`/gallery-albums/${id}`);
+  return response.data;
+}
+
+export async function createGalleryAlbum(data: { title: string; description?: string; accent?: string; cover?: string }) {
+  const response = await api.post("/gallery-albums", data);
+  return response.data;
+}
+
+export async function updateGalleryAlbum(id: number, data: { title?: string; description?: string; accent?: string; cover?: string }) {
+  const response = await api.put(`/gallery-albums/${id}`, data);
+  return response.data;
+}
+
+export async function deleteGalleryAlbum(id: number) {
+  const response = await api.delete(`/gallery-albums/${id}`);
+  return response.data;
+}
+
+export async function uploadGalleryImages(id: number, data: { images: string[]; captions?: (string | null)[] }) {
+  const response = await api.post(`/gallery-albums/${id}/images`, data);
+  return response.data;
+}
+
+export async function deleteGalleryImage(albumId: number, imageId: number) {
+  const response = await api.delete(`/gallery-albums/${albumId}/images/${imageId}`);
+  return response.data;
+}
+
+// Cookie consents
+export async function getCookieConsents(params?: Record<string, string>) {
+  const response = await api.get("/cookie-consents", { params });
+  return response.data;
+}
+
+export async function getCookieConsentStats() {
+  const response = await api.get("/cookie-consents/stats");
+  return response.data;
+}
+
+// Visit tracker
+export async function getVisits(params?: Record<string, string>) {
+  const response = await api.get("/visits", { params });
+  return response.data;
+}
+
+export async function getVisitStats() {
+  const response = await api.get("/visits/stats");
   return response.data;
 }
 

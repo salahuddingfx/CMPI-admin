@@ -25,7 +25,10 @@ import {
   Check,
   Sliders,
   BookMarked,
-  Activity
+  Activity,
+  Image,
+  Cookie,
+  ChartBarBig
 } from "lucide-react";
 import { logout, getNotifications, markAllNotificationsRead, markNotificationRead } from "../../services/api";
 
@@ -130,8 +133,11 @@ export default function AdminLayout() {
     { name: "Bills & Payments", path: "/bills", icon: DollarSign },
     { name: "Reports", path: "/reports", icon: FileText },
     { name: "Social Links", path: "/social-links", icon: Share2 },
+    { name: "Gallery", path: "/gallery", icon: Image },
+    { name: "Cookie Consents", path: "/cookie-consents", icon: Cookie },
     { name: "Hero Slides", path: "/hero-slides", icon: Sliders },
     { name: "Site Settings", path: "/site-settings", icon: Settings },
+    { name: "Analytics", path: "/analytics", icon: ChartBarBig },
     { name: "System Status", path: "/system-status", icon: Activity },
   ];
 
@@ -145,7 +151,7 @@ export default function AdminLayout() {
       case "academic_editor":
         return ["Dashboard", "Subjects", "Class Routines", "Institute Results", "BTEB Results Board", "Departments"].includes(itemName);
       case "content_manager":
-        return ["Dashboard", "Notices", "Events Calendar", "Blogs & News", "Hero Slides", "Social Links"].includes(itemName);
+        return ["Dashboard", "Notices", "Events Calendar", "Blogs & News", "Hero Slides", "Social Links", "Gallery", "Cookie Consents"].includes(itemName);
       case "admission_officer":
         return ["Dashboard", "Admissions Applications", "Faculty Directory"].includes(itemName);
       case "accountant":
@@ -231,8 +237,12 @@ export default function AdminLayout() {
         {/* Sidebar Footer Logged In User Info */}
         <div className="border-t border-border p-4 bg-muted/40">
           <div className="flex items-center gap-3 mb-4 px-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary/20 text-secondary-dark font-black">
-              {adminUser.name[0].toUpperCase()}
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary/20 text-secondary-dark font-black overflow-hidden">
+              {adminUser.avatar ? (
+                <img src={adminUser.avatar} alt={adminUser.name} className="h-full w-full object-cover" />
+              ) : (
+                adminUser.name[0].toUpperCase()
+              )}
             </div>
             <div className="overflow-hidden">
               <p className="text-xs font-black text-foreground truncate">{adminUser.name}</p>

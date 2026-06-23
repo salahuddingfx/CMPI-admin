@@ -22,9 +22,7 @@ export default function FileUpload({ value, onChange, folder, accept = "image/*"
       const formData = new FormData();
       formData.append("file", file);
       formData.append("folder", folder);
-      const response = await api.post("/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const response = await api.post("/upload", formData);
       onChange(response.data.url);
     } catch (err: any) {
       alert(err.response?.data?.message || "Upload failed");

@@ -22,6 +22,9 @@ const Reports = lazy(() => import("../pages/Reports"));
 const SocialLinks = lazy(() => import("../pages/SocialLinks"));
 const SiteSettings = lazy(() => import("../pages/SiteSettings"));
 const HeroSlides = lazy(() => import("../pages/HeroSlides"));
+const Gallery = lazy(() => import("../pages/Gallery"));
+const CookieConsents = lazy(() => import("../pages/CookieConsents"));
+const Analytics = lazy(() => import("../pages/Analytics"));
 const SystemStatus = lazy(() => import("../pages/SystemStatus"));
 
 // Auth Guard Component
@@ -71,7 +74,7 @@ const RequirePermission = ({ children, module }: { children: React.ReactNode; mo
         isAllowed = ["subjects", "routines", "results", "departments"].includes(module);
         break;
       case "content_manager":
-        isAllowed = ["notices", "events", "blogs", "hero_slides", "social_links"].includes(module);
+        isAllowed = ["notices", "events", "blogs", "hero_slides", "social_links", "gallery", "cookie_consents"].includes(module);
         break;
       case "admission_officer":
         isAllowed = ["admissions", "faculty"].includes(module);
@@ -134,6 +137,9 @@ export default function AppRoutes() {
           <Route path="subjects" element={<RequirePermission module="subjects"><Subjects /></RequirePermission>} />
           <Route path="reports" element={<RequirePermission module="reports"><Reports /></RequirePermission>} />
           <Route path="social-links" element={<RequirePermission module="social_links"><SocialLinks /></RequirePermission>} />
+          <Route path="gallery" element={<RequirePermission module="gallery"><Gallery /></RequirePermission>} />
+          <Route path="cookie-consents" element={<RequirePermission module="cookie_consents"><CookieConsents /></RequirePermission>} />
+          <Route path="analytics" element={<RequirePermission module="analytics"><Analytics /></RequirePermission>} />
           <Route path="hero-slides" element={<RequirePermission module="hero_slides"><HeroSlides /></RequirePermission>} />
           <Route path="site-settings" element={<RequirePermission module="site_settings"><SiteSettings /></RequirePermission>} />
           <Route path="system-status" element={<RequirePermission module="system_status"><SystemStatus /></RequirePermission>} />
