@@ -214,9 +214,7 @@ export const BTEB_SUBJECTS: Record<string, BtebSubjectInfo> = {
   // ═══════════════════════════════════════════════════════════════════════════
 
   // 2022 Regulation — Electrical Technology (267xx / 268xx)
-  "26711": { name: "Basic Electricity", dept: "Electrical Technology" },
   "26712": { name: "Electrical Engineering Materials", dept: "Electrical Technology" },
-  "26721": { name: "Electrical Circuits-I", dept: "Electrical Technology" },
   "26722": { name: "Electrical Engineering Drawing", dept: "Electrical Technology" },
   "26731": { name: "Electrical Circuits-II", dept: "Electrical Technology" },
   "26732": { name: "Electrical Appliances", dept: "Electrical Technology" },
@@ -229,18 +227,12 @@ export const BTEB_SUBJECTS: Record<string, BtebSubjectInfo> = {
   "26754": { name: "Electrical Engineering Project-II", dept: "Electrical Technology" },
   "26761": { name: "AC Machine-I", dept: "Electrical Technology" },
   "26763": { name: "Electrical & Electronic Measurements-II", dept: "Electrical Technology" },
-  "26811": { name: "Basic Electronics", dept: "Shared" },
-  "26833": { name: "Industrial Electronics", dept: "Shared" },
-  "26842": { name: "Communication Engineering", dept: "Shared" },
-  "26845": { name: "Digital Electronics", dept: "Shared" },
-  "26853": { name: "Microprocessor & Microcontroller", dept: "Shared" },
   "26667": { name: "Programming in C", dept: "Electrical Technology" },
 
   // 2016 Regulation — Electrical Technology (667xx)
   "66711": { name: "Basic Electricity", dept: "Electrical Technology" },
   "66712": { name: "Electrical Engineering Fundamentals", dept: "Electrical Technology" },
   "66713": { name: "Electrical Engineering Materials", dept: "Electrical Technology" },
-  "66721": { name: "Electrical Circuits-1", dept: "Electrical Technology" },
   "66722": { name: "Electrical Appliances", dept: "Electrical Technology" },
   "66731": { name: "Electrical Circuits-2", dept: "Electrical Technology" },
   "66732": { name: "Advance Electricity", dept: "Electrical Technology" },
@@ -260,7 +252,6 @@ export const BTEB_SUBJECTS: Record<string, BtebSubjectInfo> = {
   "66775": { name: "Testing & Maintenance of Electrical Equipment", dept: "Electrical Technology" },
   "66781": { name: "Industrial Training", dept: "Electrical Technology" },
   "66811": { name: "Basic Electronics", dept: "Electrical Technology" },
-  "66845": { name: "Industrial Electronics", dept: "Electrical Technology" },
   "66856": { name: "Digital Electronics & Microprocessor", dept: "Electrical Technology" },
   "66863": { name: "Instrumentation & Process Control", dept: "Electrical Technology" },
   "66867": { name: "Communication Engineering", dept: "Electrical Technology" },
@@ -314,11 +305,6 @@ export const BTEB_SUBJECTS: Record<string, BtebSubjectInfo> = {
   // MECHANICAL TECHNOLOGY
   // ═══════════════════════════════════════════════════════════════════════════
 
-  "27011": { name: "Workshop Technology", dept: "Shared" },
-  "27012": { name: "Basic Workshop Practice", dept: "Shared" },
-  "27041": { name: "Engineering Mechanics", dept: "Shared" },
-  "27051": { name: "Fluid Mechanics & Machineries", dept: "Shared" },
-  "27061": { name: "Strength of Materials", dept: "Shared" },
   "27071": { name: "Design of Machine Elements", dept: "Mechanical Technology" },
   "27131": { name: "Engineering Thermodynamics", dept: "Mechanical Technology" },
   "27161": { name: "Engine Overhauling, Inspection & Testing", dept: "Mechanical Technology" },
