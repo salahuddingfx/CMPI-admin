@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import type { ChangeEvent } from "react";
-import { Upload, Trash2, Download, Loader2, CheckCircle, AlertTriangle, Edit2, X, Save } from "lucide-react";
+import { Upload, Trash2, Download, Loader2, CheckCircle, AlertTriangle, Edit2, Save } from "lucide-react";
 import {
   getClassRoutines,
   uploadClassRoutine,
