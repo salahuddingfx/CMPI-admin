@@ -76,7 +76,7 @@ export async function getChartData() {
 // Notice management
 export async function getNotices() {
   const response = await api.get("/notices");
-  return response.data;
+  return response.data?.data ?? response.data;
 }
 export async function createNotice(data: any) {
   const response = await api.post("/notices", data);
@@ -94,7 +94,7 @@ export async function deleteNotice(id: number) {
 // Event management
 export async function getEvents() {
   const response = await api.get("/events");
-  return response.data;
+  return response.data?.data ?? response.data;
 }
 export async function createEvent(data: any) {
   const response = await api.post("/events", data);
@@ -112,7 +112,7 @@ export async function deleteEvent(id: number) {
 // Blog management
 export async function getBlogs() {
   const response = await api.get("/blogs");
-  return response.data;
+  return response.data?.data ?? response.data;
 }
 export async function createBlog(data: any) {
   const response = await api.post("/blogs", data);
@@ -130,7 +130,7 @@ export async function deleteBlog(id: number) {
 // Faculty management
 export async function getFaculty() {
   const response = await api.get("/faculty");
-  return response.data;
+  return response.data?.data ?? response.data;
 }
 export async function createFaculty(data: any) {
   const response = await api.post("/faculty", data);
