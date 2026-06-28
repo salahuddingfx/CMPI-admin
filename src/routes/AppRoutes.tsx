@@ -26,8 +26,10 @@ const Gallery = lazy(() => import("../pages/Gallery"));
 const CookieConsents = lazy(() => import("../pages/CookieConsents"));
 const Analytics = lazy(() => import("../pages/Analytics"));
 const SystemStatus = lazy(() => import("../pages/SystemStatus"));
+const AcademicCalendar = lazy(() => import("../pages/AcademicCalendar"));
+const FeedbackModeration = lazy(() => import("../pages/FeedbackModeration"));
 
-// Auth Guard Component
+// Auth Guard Component - Force TS Cache Refresh
 const RequireAuth = ({ children }: { children: React.ReactNode }) => {
   const token = localStorage.getItem("cmpi-admin-token");
   const userStr = localStorage.getItem("cmpi-admin-user");
@@ -71,10 +73,10 @@ const RequirePermission = ({ children, module }: { children: React.ReactNode; mo
     let isAllowed = false;
     switch (subRole) {
       case "academic_editor":
-        isAllowed = ["subjects", "routines", "results", "departments"].includes(module);
+        isAllowed = ["subjects", "routines", "results", "departments", "academic_calendar"].includes(module);
         break;
       case "content_manager":
-        isAllowed = ["notices", "events", "blogs", "hero_slides", "social_links", "gallery", "cookie_consents"].includes(module);
+        isAllowed = ["notices", "events", "blogs", "hero_slides", "social_links", "gallery", "cookie_consents", "academic_calendar", "feedbacks"].includes(module);
         break;
       case "admission_officer":
         isAllowed = ["admissions", "faculty"].includes(module);
@@ -143,6 +145,8 @@ export default function AppRoutes() {
           <Route path="hero-slides" element={<RequirePermission module="hero_slides"><HeroSlides /></RequirePermission>} />
           <Route path="site-settings" element={<RequirePermission module="site_settings"><SiteSettings /></RequirePermission>} />
           <Route path="system-status" element={<RequirePermission module="system_status"><SystemStatus /></RequirePermission>} />
+          <Route path="academic-calendar" element={<RequirePermission module="academic_calendar"><AcademicCalendar /></RequirePermission>} />
+          <Route path="feedbacks" element={<RequirePermission module="feedbacks"><FeedbackModeration /></RequirePermission>} />
         </Route>
 
         {/* Fallback route */}
