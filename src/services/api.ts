@@ -467,6 +467,50 @@ export async function getVisits(params?: Record<string, string>) {
 
 export async function getVisitStats() {
   const response = await api.get("/visits/stats");
+  const data = response.data;
+  return data;
+}
+
+// Academic Calendar Management
+export async function getAcademicCalendar(params?: Record<string, string | number>) {
+  const response = await api.get("/academic-calendar", { params });
   return response.data;
 }
+
+export async function createAcademicCalendarItem(data: any) {
+  const response = await api.post("/academic-calendar", data);
+  return response.data;
+}
+
+export async function updateAcademicCalendarItem(id: number | string, data: any) {
+  const response = await api.put(`/academic-calendar/${id}`, data);
+  return response.data;
+}
+
+export async function deleteAcademicCalendarItem(id: number | string) {
+  const response = await api.delete(`/academic-calendar/${id}`);
+  return response.data;
+}
+
+// Feedback Moderation Management
+export async function getFeedbacks(params?: Record<string, string | number>) {
+  const response = await api.get("/feedbacks", { params });
+  return response.data;
+}
+
+export async function approveFeedback(id: number | string) {
+  const response = await api.patch(`/feedbacks/${id}/approve`);
+  return response.data;
+}
+
+export async function rejectFeedback(id: number | string) {
+  const response = await api.patch(`/feedbacks/${id}/reject`);
+  return response.data;
+}
+
+export async function deleteFeedback(id: number | string) {
+  const response = await api.delete(`/feedbacks/${id}`);
+  return response.data;
+}
+
 
