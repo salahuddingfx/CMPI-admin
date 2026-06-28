@@ -28,7 +28,8 @@ import {
   Activity,
   Image,
   Cookie,
-  ChartBarBig
+  ChartBarBig,
+  MessageSquare
 } from "lucide-react";
 import { logout, getNotifications, markAllNotificationsRead, markNotificationRead } from "../../services/api";
 
@@ -130,6 +131,8 @@ export default function AdminLayout() {
     { name: "Institute Results", path: "/institute-results", icon: FileCheck },
     { name: "Subjects", path: "/subjects", icon: BookMarked },
     { name: "Class Routines", path: "/class-routines", icon: CalendarClock },
+    { name: "Academic Calendar", path: "/academic-calendar", icon: CalendarClock },
+    { name: "Feedback Moderation", path: "/feedbacks", icon: MessageSquare },
     { name: "Bills & Payments", path: "/bills", icon: DollarSign },
     { name: "Reports", path: "/reports", icon: FileText },
     { name: "Social Links", path: "/social-links", icon: Share2 },
@@ -149,9 +152,9 @@ export default function AdminLayout() {
 
     switch (subRole) {
       case "academic_editor":
-        return ["Dashboard", "Subjects", "Class Routines", "Institute Results", "BTEB Results Board", "Departments"].includes(itemName);
+        return ["Dashboard", "Subjects", "Class Routines", "Institute Results", "BTEB Results Board", "Departments", "Academic Calendar"].includes(itemName);
       case "content_manager":
-        return ["Dashboard", "Notices", "Events Calendar", "Blogs & News", "Hero Slides", "Social Links", "Gallery", "Cookie Consents"].includes(itemName);
+        return ["Dashboard", "Notices", "Events Calendar", "Blogs & News", "Hero Slides", "Social Links", "Gallery", "Cookie Consents", "Academic Calendar", "Feedback Moderation"].includes(itemName);
       case "admission_officer":
         return ["Dashboard", "Admissions Applications", "Faculty Directory"].includes(itemName);
       case "accountant":
