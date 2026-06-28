@@ -437,8 +437,7 @@ export default function BtebResults() {
   const totalFileSize = (files: { size_bytes: number }[]) =>
     files.reduce((sum, f) => sum + (f.size_bytes || 0), 0);
 
-  const totalFileResults = (files: { results: number }[]) =>
-    files.reduce((sum, f) => sum + (f.results || 0), 0);
+
 
   const formatDuration = (sec: number) => {
     if (sec < 60) return `${sec}s`;
