@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2, Globe, Monitor, Smartphone, Tablet, Eye, Users, MapPin, Calendar, ArrowUpDown } from "lucide-react";
+import { Loader2, Globe, Monitor, Smartphone, Tablet, Eye, Users, MapPin, Calendar } from "lucide-react";
 import { getVisits, getVisitStats } from "../services/api";
 
 interface Stats {
