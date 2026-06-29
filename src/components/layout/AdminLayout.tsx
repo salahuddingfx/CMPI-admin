@@ -133,6 +133,7 @@ export default function AdminLayout() {
     { name: "Class Routines", path: "/class-routines", icon: CalendarClock },
     { name: "Academic Calendar", path: "/academic-calendar", icon: CalendarClock },
     { name: "Feedback Moderation", path: "/feedbacks", icon: MessageSquare },
+    { name: "Desk Messages", path: "/messages", icon: FileText },
     { name: "Bills & Payments", path: "/bills", icon: DollarSign },
     { name: "Reports", path: "/reports", icon: FileText },
     { name: "Social Links", path: "/social-links", icon: Share2 },
@@ -154,7 +155,7 @@ export default function AdminLayout() {
       case "academic_editor":
         return ["Dashboard", "Subjects", "Class Routines", "Institute Results", "BTEB Results Board", "Departments", "Academic Calendar"].includes(itemName);
       case "content_manager":
-        return ["Dashboard", "Notices", "Events Calendar", "Blogs & News", "Hero Slides", "Social Links", "Gallery", "Cookie Consents", "Academic Calendar", "Feedback Moderation"].includes(itemName);
+        return ["Dashboard", "Notices", "Events Calendar", "Blogs & News", "Hero Slides", "Social Links", "Gallery", "Cookie Consents", "Academic Calendar", "Feedback Moderation", "Desk Messages"].includes(itemName);
       case "admission_officer":
         return ["Dashboard", "Admissions Applications", "Faculty Directory"].includes(itemName);
       case "accountant":
@@ -382,8 +383,25 @@ export default function AdminLayout() {
               )}
             </div>
 
+            {/* Admin User Profile Bubble */}
+            <div className="flex items-center gap-3 pl-3 border-l border-border/80">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-sm overflow-hidden border border-border animate-fade-in">
+                {adminUser.avatar ? (
+                  <img src={adminUser.avatar} alt={adminUser.name} className="h-full w-full object-cover" />
+                ) : adminUser.name ? (
+                  adminUser.name.charAt(0).toUpperCase()
+                ) : (
+                  "A"
+                )}
+              </div>
+              <div className="hidden sm:block text-left max-w-[120px]">
+                <p className="text-xs font-bold text-foreground truncate">{adminUser.name}</p>
+                <p className="text-[9px] text-muted-foreground uppercase font-semibold">Admin</p>
+              </div>
+            </div>
+
             {/* Quick Status badge */}
-            <div className="hidden md:flex items-center gap-2 border border-primary/20 rounded-xl px-3 py-1.5 bg-primary/5 text-primary text-xs font-bold shadow-sm">
+            <div className="hidden lg:flex items-center gap-2 border border-primary/20 rounded-xl px-3 py-1.5 bg-primary/5 text-primary text-xs font-bold shadow-sm">
               <span className="h-2 w-2 rounded-full bg-primary animate-ping"></span>
               <span>System Live</span>
             </div>
