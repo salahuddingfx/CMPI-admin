@@ -168,8 +168,8 @@ export async function getAdmissions() {
   const response = await api.get("/admissions");
   return response.data;
 }
-export async function updateAdmissionStatus(id: number, status: string) {
-  const response = await api.put(`/admissions/${id}/status`, { status });
+export async function updateAdmissionStatus(id: number, payload: any) {
+  const response = await api.put(`/admissions/${id}/status`, payload);
   return response.data;
 }
 
@@ -510,6 +510,17 @@ export async function rejectFeedback(id: number | string) {
 
 export async function deleteFeedback(id: number | string) {
   const response = await api.delete(`/feedbacks/${id}`);
+  return response.data;
+}
+
+// Admin Messages Control
+export async function getAdminMessages() {
+  const response = await api.get("/admin-messages");
+  return response.data;
+}
+
+export async function updateAdminMessage(id: number | string, data: any) {
+  const response = await api.put(`/admin-messages/${id}`, data);
   return response.data;
 }
 

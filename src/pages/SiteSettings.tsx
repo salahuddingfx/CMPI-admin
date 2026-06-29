@@ -17,6 +17,8 @@ export default function SiteSettings() {
   const [eiin, setEiin] = useState("");
   const [established, setEstablished] = useState("");
   const [logo, setLogo] = useState("");
+  const [bkashNumber, setBkashNumber] = useState("");
+  const [nagadNumber, setNagadNumber] = useState("");
 
   useEffect(() => {
     getInstitute()
@@ -31,6 +33,8 @@ export default function SiteSettings() {
         setEiin(data.eiin || "");
         setEstablished(data.established || "");
         setLogo(data.logo || "");
+        setBkashNumber(data.bkash_number || "");
+        setNagadNumber(data.nagad_number || "");
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -43,6 +47,7 @@ export default function SiteSettings() {
       await updateInstitute({
         name, short_name: shortName, tagline, address,
         phone, email, website, eiin, established, logo,
+        bkash_number: bkashNumber, nagad_number: nagadNumber,
       });
       alert("Settings saved successfully!");
     } catch (err: any) {
@@ -131,6 +136,19 @@ export default function SiteSettings() {
           label="Institute Logo"
           placeholder="/CMPI.png"
         />
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 border-t border-border pt-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-black uppercase text-muted-foreground block">Admission bKash Number</label>
+            <input type="text" value={bkashNumber} onChange={(e) => setBkashNumber(e.target.value)} placeholder="e.g. +880 1888-000000"
+              className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-semibold focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-black uppercase text-muted-foreground block">Admission Nagad Number</label>
+            <input type="text" value={nagadNumber} onChange={(e) => setNagadNumber(e.target.value)} placeholder="e.g. +880 1888-111111"
+              className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-semibold focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+          </div>
+        </div>
 
         <button type="submit" disabled={saving}
           className="flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground hover:bg-primary-dark font-black shadow-lg shadow-primary/25 px-6 py-3 text-sm transition disabled:opacity-50">

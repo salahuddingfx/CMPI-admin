@@ -1,6 +1,21 @@
 import { useEffect, useState } from "react";
-import { Loader2, Globe, Monitor, Smartphone, Tablet, Eye, Users, MapPin, Calendar } from "lucide-react";
+import { Loader2, Globe, Monitor, Smartphone, Tablet, Eye, Users, MapPin, Calendar, BarChart3 } from "lucide-react";
 import { getVisits, getVisitStats } from "../services/api";
+import {
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
+} from "recharts";
 
 interface Stats {
   total: number;
@@ -28,6 +43,30 @@ interface Visit {
   os: string;
   created_at: string;
 }
+
+const PIE_COLORS = ["#06b6d4", "#facc15", "#ec4899", "#84cc16"];
+
+function ChartTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-lg text-xs">
+      <p className="font-bold text-foreground mb-1">{label}</p>
+      {payload.map((item: any, index: number) => (
+        <p key={index} className="font-semibold" style={{ color: item.stroke || item.fill }}>
+          {item.name}: {item.value}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+const getPathname = (urlStr: string) => {
+  try {
+    return new URL(urlStr).pathname;
+  } catch {
+    return urlStr;
+  }
+};
 
 export default function Analytics() {
   const [visits, setVisits] = useState<Visit[]>([]);
@@ -67,6 +106,51 @@ export default function Analytics() {
     }
   };
 
+  // Process traffic trend (Total visits & unique visitors per day)
+  const getTrafficData = () => {
+    if (visits.length === 0) return [];
+    
+    const datesMap: Record<string, { date: string; dateObj: Date; visits: number; uniques: Set<string> }> = {};
+    
+    visits.forEach((v) => {
+      if (!v.created_at) return;
+      const dateObj = new Date(v.created_at);
+      // Format as Month Day (e.g. Jun 28)
+      const dateStr = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      
+      if (!datesMap[dateStr]) {
+        datesMap[dateStr] = {
+          date: dateStr,
+          dateObj: dateObj,
+          visits: 0,
+          uniques: new Set<string>(),
+        };
+      }
+      
+      datesMap[dateStr].visits += 1;
+      if (v.visitor_id) {
+        datesMap[dateStr].uniques.add(v.visitor_id);
+      }
+    });
+
+    // Convert to sorted array
+    return Object.values(datesMap)
+      .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())
+      .map((item) => ({
+        date: item.date,
+        "Total Visits": item.visits,
+        "Unique Visitors": item.uniques.size,
+      }));
+  };
+
+  const trafficData = getTrafficData();
+
+  // Top Pages data structure
+  const topPagesData = stats?.top_pages.map((p) => ({
+    name: getPathname(p.page_url),
+    visits: p.visits,
+  })) || [];
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -78,6 +162,7 @@ export default function Analytics() {
 
       {stats && (
         <>
+          {/* Numerical Stats row */}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
             <div className="rounded-xl border border-border bg-card p-4">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
@@ -116,57 +201,121 @@ export default function Analytics() {
             </div>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
-            <div className="rounded-xl border border-border bg-card p-4">
-              <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Top Countries</h3>
+          {/* Visitor Traffic Tracker (Daily trend area chart) */}
+          {trafficData.length > 0 && (
+            <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+              <div className="flex items-center gap-2 mb-4 border-b pb-2">
+                <Eye className="h-4 w-4 text-primary" />
+                <h3 className="text-xs font-black text-foreground uppercase tracking-wider">Visitor Traffic Tracker (Daily)</h3>
+              </div>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={trafficData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorVisits" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.15}/>
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorUnique" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.15}/>
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                    <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                    <Tooltip content={<ChartTooltip />} />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                    <Area type="monotone" dataKey="Total Visits" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorVisits)" />
+                    <Area type="monotone" dataKey="Unique Visitors" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorUnique)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {/* Breakdown Charts Grid */}
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Top Countries BarChart */}
+            <div className="rounded-xl border border-border bg-card p-5">
+              <div className="flex items-center gap-2 mb-4 border-b pb-2">
+                <Globe className="h-4 w-4 text-blue-600" />
+                <h3 className="text-xs font-black text-foreground uppercase tracking-wider">Top Countries</h3>
+              </div>
               {stats.top_countries.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No data yet</p>
+                <p className="text-xs text-muted-foreground text-center py-10">No country data yet</p>
               ) : (
-                <div className="space-y-2">
-                  {stats.top_countries.map((c) => (
-                    <div key={c.country} className="flex items-center justify-between">
-                      <span className="flex items-center gap-2 text-sm font-semibold">
-                        <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                        {c.country}
-                      </span>
-                      <span className="text-sm font-bold text-foreground">{c.visits}</span>
-                    </div>
-                  ))}
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={stats.top_countries} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                      <XAxis dataKey="country" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
+                      <YAxis tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
+                      <Tooltip content={<ChartTooltip />} />
+                      <Bar dataKey="visits" name="Visits" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
               )}
             </div>
 
-            <div className="rounded-xl border border-border bg-card p-4">
-              <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Top Pages</h3>
-              {stats.top_pages.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No data yet</p>
+            {/* Top Pages Horizontal BarChart */}
+            <div className="rounded-xl border border-border bg-card p-5">
+              <div className="flex items-center gap-2 mb-4 border-b pb-2">
+                <BarChart3 className="h-4 w-4 text-emerald-600" />
+                <h3 className="text-xs font-black text-foreground uppercase tracking-wider">Top Pages</h3>
+              </div>
+              {topPagesData.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-10">No page data yet</p>
               ) : (
-                <div className="space-y-2">
-                  {stats.top_pages.map((p) => (
-                    <div key={p.page_url} className="flex items-center justify-between">
-                      <span className="truncate text-sm font-semibold max-w-[70%]">{new URL(p.page_url).pathname}</span>
-                      <span className="text-sm font-bold text-foreground">{p.visits}</span>
-                    </div>
-                  ))}
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={topPagesData} layout="vertical" margin={{ top: 5, right: 5, left: 15, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
+                      <XAxis type="number" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
+                      <YAxis dataKey="name" type="category" tick={{ fontSize: 8, fill: "hsl(var(--muted-foreground))" }} width={80} />
+                      <Tooltip content={<ChartTooltip />} />
+                      <Bar dataKey="visits" name="Visits" fill="#10b981" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
               )}
             </div>
 
-            <div className="rounded-xl border border-border bg-card p-4">
-              <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Device Breakdown</h3>
+            {/* Device Breakdown PieChart */}
+            <div className="rounded-xl border border-border bg-card p-5">
+              <div className="flex items-center gap-2 mb-4 border-b pb-2">
+                <Monitor className="h-4 w-4 text-pink-600" />
+                <h3 className="text-xs font-black text-foreground uppercase tracking-wider">Device Breakdown</h3>
+              </div>
               {stats.device_breakdown.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No data yet</p>
+                <p className="text-xs text-muted-foreground text-center py-10">No device data yet</p>
               ) : (
-                <div className="space-y-2">
-                  {stats.device_breakdown.map((d) => (
-                    <div key={d.device_type} className="flex items-center justify-between">
-                      <span className="flex items-center gap-2 text-sm font-semibold capitalize">
-                        {deviceIcon(d.device_type)}
-                        {d.device_type}
-                      </span>
-                      <span className="text-sm font-bold text-foreground">{d.count}</span>
-                    </div>
-                  ))}
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={stats.device_breakdown}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={45}
+                        outerRadius={65}
+                        paddingAngle={4}
+                        dataKey="count"
+                        nameKey="device_type"
+                      >
+                        {stats.device_breakdown.map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<ChartTooltip />} />
+                      <Legend 
+                        formatter={(value) => <span className="text-[10px] font-bold capitalize text-muted-foreground">{value}</span>}
+                        iconSize={8}
+                        iconType="circle"
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
               )}
             </div>
@@ -174,6 +323,7 @@ export default function Analytics() {
         </>
       )}
 
+      {/* Control filters row */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex gap-1 rounded-xl border border-border p-1 bg-background">
           {["", "desktop", "mobile", "tablet"].map((d) => (
@@ -181,10 +331,10 @@ export default function Analytics() {
               key={d}
               onClick={() => setDeviceFilter(d)}
               className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                deviceFilter === d ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"
+                deviceFilter === d ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {d === "" ? "All" : d.charAt(0).toUpperCase() + d.slice(1)}
+              {d === "" ? "All Devices" : d.charAt(0).toUpperCase() + d.slice(1)}
             </button>
           ))}
         </div>
@@ -197,6 +347,7 @@ export default function Analytics() {
         />
       </div>
 
+      {/* Visitor tracking details table */}
       {loading ? (
         <div className="flex h-48 items-center justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -232,7 +383,7 @@ export default function Analytics() {
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{v.ip_address}</td>
                   <td className="px-4 py-3 max-w-[200px] truncate text-xs text-muted-foreground" title={v.page_url}>
-                    {v.page_url ? new URL(v.page_url).pathname : "—"}
+                    {v.page_url ? getPathname(v.page_url) : "—"}
                   </td>
                   <td className="px-4 py-3">
                     <span className="flex items-center gap-1 text-xs font-semibold text-muted-foreground capitalize">

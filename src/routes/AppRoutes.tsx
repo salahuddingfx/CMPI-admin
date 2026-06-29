@@ -28,6 +28,7 @@ const Analytics = lazy(() => import("../pages/Analytics"));
 const SystemStatus = lazy(() => import("../pages/SystemStatus"));
 const AcademicCalendar = lazy(() => import("../pages/AcademicCalendar"));
 const FeedbackModeration = lazy(() => import("../pages/FeedbackModeration"));
+const AdminMessages = lazy(() => import("../pages/AdminMessages"));
 
 // Auth Guard Component - Force TS Cache Refresh
 const RequireAuth = ({ children }: { children: React.ReactNode }) => {
@@ -147,6 +148,7 @@ export default function AppRoutes() {
           <Route path="system-status" element={<RequirePermission module="system_status"><SystemStatus /></RequirePermission>} />
           <Route path="academic-calendar" element={<RequirePermission module="academic_calendar"><AcademicCalendar /></RequirePermission>} />
           <Route path="feedbacks" element={<RequirePermission module="feedbacks"><FeedbackModeration /></RequirePermission>} />
+          <Route path="messages" element={<RequirePermission module="messages"><AdminMessages /></RequirePermission>} />
         </Route>
 
         {/* Fallback route */}

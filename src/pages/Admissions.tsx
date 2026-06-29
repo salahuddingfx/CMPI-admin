@@ -15,6 +15,13 @@ interface Admission {
   address: string;
   blood_group?: string;
   status: string;
+  payment_method?: string;
+  txn_id?: string;
+  payment_status?: string;
+  sender_number?: string;
+  admission_fee_amount?: number;
+  admission_fee_status?: string;
+  board_confirmation?: string;
   created_at: string;
 }
 
@@ -46,7 +53,7 @@ export default function Admissions() {
     if (await window.customConfirm(`Are you sure you want to change status to ${status}? Approving will auto-create a student user account.`)) {
       setUpdatingId(id);
       try {
-        await updateAdmissionStatus(id, status);
+        await updateAdmissionStatus(id, { status });
         // Refresh
         await loadAdmissions();
         // If the selected applicant detail is open, update its local copy
@@ -142,7 +149,9 @@ export default function Admissions() {
                       <th className="py-3.5">Candidate Name</th>
                       <th className="py-3.5">Department Choice</th>
                       <th className="py-3.5">SSC GPA</th>
-                      <th className="py-3.5">Status</th>
+                      <th className="py-3.5">Form Fee</th>
+                      <th className="py-3.5">Admission Status & Fee</th>
+                      <th className="py-3.5">Board Conf.</th>
                       <th className="py-3.5 text-right pr-4">Actions</th>
                     </tr>
                   </thead>
@@ -159,21 +168,54 @@ export default function Admissions() {
                         <td className="py-3.5 font-extrabold text-foreground">{a.name}</td>
                         <td className="py-3.5 text-muted-foreground font-semibold">{a.department}</td>
                         <td className="py-3.5 text-foreground font-bold">{a.ssc_gpa}</td>
+                        
+                        {/* Form Fee */}
                         <td className="py-3.5">
-                          <span
-                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ${
-                              a.status === "Approved"
-                                ? "bg-primary/10 text-primary"
-                                : a.status === "Rejected"
-                                ? "bg-destructive/10 text-destructive"
-                                : "bg-secondary/15 text-secondary-dark"
-                            }`}
-                          >
-                            <span>{a.status}</span>
+                          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ${
+                            a.payment_status === "paid" ? "bg-green-500/10 text-green-600" :
+                            a.payment_status === "unpaid" ? "bg-red-500/10 text-red-600" :
+                            "bg-yellow-500/10 text-yellow-600"
+                          }`}>
+                            {a.payment_status === "paid" ? "Paid" :
+                             a.payment_status === "unpaid" ? "Unpaid" : "Pending"}
                           </span>
                         </td>
+
+                        {/* Admission Status & Fee */}
+                        <td className="py-3.5">
+                          <div className="flex flex-col gap-0.5">
+                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold w-fit ${
+                              a.status.toLowerCase() === "approved" ? "bg-primary/10 text-primary" :
+                              a.status.toLowerCase() === "rejected" ? "bg-destructive/10 text-destructive" :
+                              "bg-secondary/15 text-secondary-dark"
+                            }`}>
+                              {a.status}
+                            </span>
+                            {a.status.toLowerCase() === "approved" && (
+                              <span className={`text-[10px] font-bold ${
+                                a.admission_fee_status === "paid" ? "text-green-600" : "text-yellow-650"
+                              }`}>
+                                Fee: {parseFloat(a.admission_fee_amount?.toString() || "5000").toLocaleString()} BDT ({a.admission_fee_status === "paid" ? "Paid" : "Unpaid"})
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Board Confirmation */}
+                        <td className="py-3.5">
+                          {a.status.toLowerCase() === "approved" ? (
+                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                              a.board_confirmation === "confirmed" ? "bg-green-500/10 text-green-600 border border-green-500/20" :
+                              "bg-yellow-500/10 text-yellow-600 border border-yellow-500/20"
+                            }`}>
+                              {a.board_confirmation === "confirmed" ? "Confirmed" : "Pending"}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">—</span>
+                          )}
+                        </td>
                         <td className="py-3.5 text-right pr-4" onClick={(e) => e.stopPropagation()}>
-                          {a.status === "Pending" ? (
+                          {a.status.toLowerCase() === "pending" ? (
                             <div className="flex justify-end gap-1">
                               <button
                                 onClick={() => handleStatusChange(a.id, "Approved")}
@@ -250,6 +292,170 @@ export default function Admissions() {
               </div>
 
               <div className="border-t border-border pt-4 space-y-3">
+                <h4 className="text-foreground font-black uppercase text-[10px] tracking-wider text-muted-foreground">Form Submission Fee</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-muted-foreground uppercase text-[9px] font-black">Method, Sender & TxnID</p>
+                    <p className="text-foreground mt-0.5 font-bold">
+                      {selectedAdm.payment_method || "N/A"} ({selectedAdm.sender_number || "No Number"}) - <span className="font-mono text-xs">{selectedAdm.txn_id || "N/A"}</span>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground uppercase text-[9px] font-black">Payment Status</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className={`inline-block rounded-full px-2 py-0.5 text-[9px] font-black uppercase border ${
+                        selectedAdm.payment_status === "paid" ? "bg-green-500/10 text-green-600 border-green-500/20" :
+                        selectedAdm.payment_status === "unpaid" ? "bg-red-500/10 text-red-600 border-red-500/20" :
+                        "bg-yellow-500/10 text-yellow-600 border-yellow-500/20"
+                      }`}>
+                        {selectedAdm.payment_status || "Pending"}
+                      </span>
+                      {selectedAdm.status.toLowerCase() === "pending" && (
+                        <select
+                          value={selectedAdm.payment_status || "pending_verification"}
+                          onChange={async (e) => {
+                            const newPayStatus = e.target.value;
+                            try {
+                              setUpdatingId(selectedAdm.id);
+                              await updateAdmissionStatus(selectedAdm.id, {
+                                status: selectedAdm.status,
+                                payment_status: newPayStatus
+                              });
+                              setSelectedAdm({ ...selectedAdm, payment_status: newPayStatus });
+                              await loadAdmissions();
+                            } catch (err: any) {
+                              alert(err.response?.data?.message || "Failed to update payment status");
+                            } finally {
+                              setUpdatingId(null);
+                            }
+                          }}
+                          className="rounded-lg border border-border bg-background px-2 py-0.5 text-[10px] font-semibold focus:outline-none"
+                        >
+                          <option value="pending_verification">Pending</option>
+                          <option value="paid">Paid (BDT 500)</option>
+                          <option value="unpaid">Unpaid</option>
+                        </select>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* College Confirmation & Admission Fee details */}
+              <div className="border-t border-border pt-4 space-y-3">
+                <h4 className="text-foreground font-black uppercase text-[10px] tracking-wider text-muted-foreground">College Admission Fee & Board Confirmation</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-muted-foreground uppercase text-[9px] font-black">Admission Fee Amount (BDT)</p>
+                    {selectedAdm.status.toLowerCase() === "approved" ? (
+                      <input
+                        type="number"
+                        value={selectedAdm.admission_fee_amount || 5000}
+                        onChange={(e) => {
+                          const newAmt = parseFloat(e.target.value) || 0;
+                          setSelectedAdm({ ...selectedAdm, admission_fee_amount: newAmt });
+                        }}
+                        onBlur={async () => {
+                          try {
+                            setUpdatingId(selectedAdm.id);
+                            await updateAdmissionStatus(selectedAdm.id, {
+                              status: selectedAdm.status,
+                              admission_fee_amount: selectedAdm.admission_fee_amount
+                            });
+                            await loadAdmissions();
+                          } catch (err: any) {
+                            alert(err.response?.data?.message || "Failed to update admission fee amount");
+                          } finally {
+                            setUpdatingId(null);
+                          }
+                        }}
+                        className="w-full rounded-xl border border-border bg-background px-3 py-1.5 text-xs font-semibold focus:outline-none mt-0.5"
+                      />
+                    ) : (
+                      <p className="text-foreground mt-0.5 font-bold">
+                        {parseFloat(selectedAdm.admission_fee_amount?.toString() || "5000").toLocaleString()} BDT
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <p className="text-muted-foreground uppercase text-[9px] font-black">Admission Fee Status</p>
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <span className={`inline-block rounded-full px-2 py-0.5 text-[9px] font-black uppercase border ${
+                        selectedAdm.admission_fee_status === "paid" ? "bg-green-500/10 text-green-600 border-green-500/20" :
+                        selectedAdm.admission_fee_status === "unpaid" ? "bg-red-500/10 text-red-600 border-red-500/20" :
+                        "bg-yellow-500/10 text-yellow-600 border-yellow-500/20"
+                      }`}>
+                        {selectedAdm.admission_fee_status || "Unpaid"}
+                      </span>
+                      {selectedAdm.status.toLowerCase() === "approved" && (
+                        <select
+                          value={selectedAdm.admission_fee_status || "unpaid"}
+                          onChange={async (e) => {
+                            const newStatus = e.target.value;
+                            try {
+                              setUpdatingId(selectedAdm.id);
+                              await updateAdmissionStatus(selectedAdm.id, {
+                                status: selectedAdm.status,
+                                admission_fee_status: newStatus
+                              });
+                              setSelectedAdm({ ...selectedAdm, admission_fee_status: newStatus });
+                              await loadAdmissions();
+                            } catch (err: any) {
+                              alert(err.response?.data?.message || "Failed to update admission fee status");
+                            } finally {
+                              setUpdatingId(null);
+                            }
+                          }}
+                          className="rounded-lg border border-border bg-background px-2 py-0.5 text-[10px] font-semibold focus:outline-none"
+                        >
+                          <option value="unpaid">Unpaid</option>
+                          <option value="paid">Paid</option>
+                        </select>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-muted-foreground uppercase text-[9px] font-black">Board Confirmation</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className={`inline-block rounded-full px-2 py-0.5 text-[9px] font-black uppercase border ${
+                        selectedAdm.board_confirmation === "confirmed" ? "bg-green-500/10 text-green-600 border-green-500/20" :
+                        "bg-yellow-500/10 text-yellow-600 border-yellow-500/20"
+                      }`}>
+                        {selectedAdm.board_confirmation || "Pending"}
+                      </span>
+                      {selectedAdm.status.toLowerCase() === "approved" && (
+                        <select
+                          value={selectedAdm.board_confirmation || "pending"}
+                          onChange={async (e) => {
+                            const newConf = e.target.value;
+                            try {
+                              setUpdatingId(selectedAdm.id);
+                              await updateAdmissionStatus(selectedAdm.id, {
+                                status: selectedAdm.status,
+                                board_confirmation: newConf
+                              });
+                              setSelectedAdm({ ...selectedAdm, board_confirmation: newConf });
+                              await loadAdmissions();
+                            } catch (err: any) {
+                              alert(err.response?.data?.message || "Failed to update board confirmation status");
+                            } finally {
+                              setUpdatingId(null);
+                            }
+                          }}
+                          className="rounded-lg border border-border bg-background px-2 py-0.5 text-[10px] font-semibold focus:outline-none"
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="confirmed">Confirmed</option>
+                        </select>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-border pt-4 space-y-3">
                 <h4 className="text-foreground font-black uppercase text-[10px] tracking-wider text-muted-foreground">Guardian Information</h4>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -273,9 +479,9 @@ export default function Admissions() {
                   <span>Application Status</span>
                   <span
                     className={`rounded-full px-2 py-0.5 ${
-                      selectedAdm.status === "Approved"
+                      selectedAdm.status.toLowerCase() === "approved"
                         ? "bg-primary/10 text-primary"
-                        : selectedAdm.status === "Rejected"
+                        : selectedAdm.status.toLowerCase() === "rejected"
                         ? "bg-destructive/10 text-destructive"
                         : "bg-secondary/15 text-secondary-dark"
                     }`}
@@ -284,7 +490,7 @@ export default function Admissions() {
                   </span>
                 </div>
 
-                {selectedAdm.status === "Pending" ? (
+                {selectedAdm.status.toLowerCase() === "pending" ? (
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleStatusChange(selectedAdm.id, "Approved")}
@@ -303,7 +509,7 @@ export default function Admissions() {
                       <span>Reject File</span>
                     </button>
                   </div>
-                ) : selectedAdm.status === "Approved" ? (
+                ) : selectedAdm.status.toLowerCase() === "approved" ? (
                   <div className="flex items-center gap-2 p-3 bg-primary/10 text-primary border border-primary/20 rounded-xl">
                     <User className="h-4 w-4" />
                     <p className="text-[10px] leading-relaxed font-bold">
