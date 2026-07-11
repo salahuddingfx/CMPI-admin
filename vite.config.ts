@@ -7,20 +7,27 @@ export default defineConfig({
   server: {
     port: 5174,
   },
+  esbuild: {
+    drop: ['console', 'debugger'],
+  } as any,
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          ui: ['framer-motion', 'lucide-react', 'sonner'],
-          charts: ['recharts'],
+        manualChunks(id: string) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+              return 'vendor';
+            }
+            if (id.includes('framer-motion') || id.includes('lucide-react') || id.includes('sonner')) {
+              return 'ui';
+            }
+            if (id.includes('recharts')) {
+              return 'charts';
+            }
+          }
         },
       },
     },
     sourcemap: false,
-    minify: 'terser',
-    terserOptions: {
-      compress: { drop_console: true, drop_debugger: true },
-    },
   },
 })
